@@ -13,9 +13,9 @@ typedef struct Player {
 	Vector2 position;
 	float radius;
 	float speed;
-	int  const dashTime = 15;
+	
 	int dashTimer;
-	int const dashCoolTime = 60;
+	
 	int dashCoolTimer;
 	int dashSpeed;
 	int velocity;
@@ -49,6 +49,7 @@ typedef struct Enemy {
 	bool patternChange;
 	bool isDash;
 
+	 Vector2 dashTargetPosition;
 } Enemy;
 
 struct Weapon
@@ -95,6 +96,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.speedInitial = enemy.speed;  // store initial
 	enemy.patternTimer = 300;
 	enemy.patternCD = 300;
+	enemy.dashTargetPosition.x = 0.0f;
+	enemy.dashTargetPosition.y = 0.0f;
 	enemy.dashCoolTimer = 100;
 	enemy.dashCoolTimerInitial = enemy.dashCoolTimer; // store initial
 	enemy.dashTimer = 15;
@@ -192,62 +195,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			player.isJump = false;
 			
 		}
-		/// 敵の移動
-		enemy.position.x += enemy.speed;
-		if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
-		{
-			enemy.speed *= -1;
-		}
-		if (enemy.patternCD >= 300)
-		{
-			if (enemy.patternChange)
-			{
-				enemy.patternTimer--;
-			}
-		}
-		// 敵がプレイヤーの方向を向く
-		if (player.position.x > enemy.position.x) {
-			enemy.direction = 1;  // 右
-		}
-		else {
-			enemy.direction = -1; // 左
-		}
-
-		/// パターン変更
-		if (enemy.patternTimer <= 0)
-		{
-			enemy.patternCD--;
-			enemy.patternChange = false;
-			enemy.patternTimer = 300;
-
-		}
-		if (enemy.patternTimer == 300)
-		{
-			enemy.patternCD--;
-			if (enemy.patternCD <= 0)
-			{
-				enemy.attackPattern = rand() % 2 + 1;
-				enemy.patternCD = 300;
-				enemy.patternChange = true;
-			}
-		}
-		// Attack pattern 1: charge → 3 dashes (X-only)
-		if (enemy.attackPattern == 1)
-		{
-			// 1) At the very start of charge, lock facing direction
-			if (!enemy.isCharging && !enemy.isDash && enemy.dashCount == 0 && enemy.dashCoolTimer == enemy.dashCoolTimerInitial) {
-				if (player.position.x > enemy.position.x) {
-					enemy.direction = 1;
-				}
-				else {
-					enemy.direction = -1;
-				}
-				// Start charging
-				enemy.isCharging = true;
-				enemy.chargeTimer = 60;  // adjust as desired
-				enemy.position.y = 640.0f; // ground Y fixed
-			}
-
 		/// 武器2(arrow)
 		
 		if (player.weapon == 1)
@@ -430,11 +377,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 		}
 
-		// Attack pattern 1: charge → 3 dashes (X-only)
-		if (enemy.attackPattern == 1)
-		{
+		// --- Enemy “charge → dash” logic for pattern 1 ---
+		if (enemy.attackPattern == 1) {
 			// 1) At the very start of charge, lock facing direction
-			if (!enemy.isCharging && !enemy.isDash && enemy.dashCount == 0 && enemy.dashCoolTimer == enemy.dashCoolTimerInitial) {
+			if (!enemy.isCharging && !enemy.isDash
+				&& enemy.dashCount == 0
+				&& enemy.dashCoolTimer == enemy.dashCoolTimerInitial) {
 				if (player.position.x > enemy.position.x) {
 					enemy.direction = 1;
 				}
@@ -443,29 +391,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 				// Start charging
 				enemy.isCharging = true;
-				enemy.chargeTimer = 60;  // adjust as desired
-				enemy.position.y = 640.0f; // ground Y fixed
+				enemy.chargeTimer = 60;     // adjust as desired
+				enemy.position.y = 640.0f;  // ground Y fixed
 			}
 
 			if (enemy.isCharging) {
 				enemy.chargeTimer--;
-				enemy.speed = 0.0f;        // stand still while charging
-				enemy.position.y = 640.0f; // maintain ground Y
+				enemy.speed = 0.0f;           // stand still while charging
+				enemy.position.y = 640.0f;    // maintain ground Y
 
 				if (enemy.chargeTimer <= 0) {
-					// End charge → Start dash in locked direction
+					// Charge ends → start dash
 					enemy.isCharging = false;
 					enemy.isDash = true;
 					enemy.dashTimer = enemy.dashTimerInitial;
+
+					// **Lock the target position at dash‐start**
+					enemy.dashTargetPosition.x = player.position.x;
+					enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters
 				}
 			}
 			else if (enemy.isDash) {
 				enemy.dashCoolTimer--;
 
-				// ❌ Don't track player's position here
-				// ✅ Dash in fixed direction set before dash
-				enemy.position.x += enemy.direction * enemy.dashSpeed;
-				enemy.position.y = 640.0f;
+				// Compute direction vector toward the locked target
+				float dx = enemy.dashTargetPosition.x - enemy.position.x;
+				float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
+				float len = sqrtf(dx * dx + dy * dy);
+				if (len != 0.0f) {
+					dx /= len;
+					dy /= len;
+				}
+
+				// If you only want horizontal (X axis) dash and maintain ground Y:
+				enemy.position.x += dx * enemy.dashSpeed;
+				enemy.position.y = 640.0f;  // keeps Y fixed
 
 				enemy.dashTimer--;
 
@@ -474,7 +434,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemy.isDash = false;
 					enemy.speed = enemy.speedInitial;
 
-					// 2) After completing a dash, face player again before next charge
+					// After finishing dash, face player again for next charge
 					if (player.position.x > enemy.position.x) {
 						enemy.direction = 1;
 					}
@@ -488,26 +448,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						enemy.chargeTimer = 60;
 					}
 					else {
-						// done all dash attacks
+						// all dashes done → reset
 						enemy.dashCount = 0;
 						enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
-						enemy.attackPattern = 0; // reset or next pattern
+						enemy.attackPattern = 0;  // or next pattern
 					}
 				}
 			}
 
+			// Reset cooldown if needed
 			if (enemy.dashCoolTimer <= 0) {
 				enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
 			}
 		}
 
+
 		// --- Collision check every frame ---
 			// Reset hit state
 		player.isHit = false;
 
-		float dx = player.position.x - enemy.position.x;
+		float ax = player.position.x - enemy.position.x;
 		float dy = player.position.y - enemy.position.y;
-		float distSq = dx * dx + dy * dy;
+		float distSq = ax * ax + dy * dy;
 		float sumR = player.radius + enemy.radius;
 		if (distSq <= sumR * sumR) {
 			player.isHit = true;

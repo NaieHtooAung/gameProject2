@@ -20,7 +20,7 @@ typedef struct Player {
 	int velocity;
 	bool isJump;
 	bool isDash;
-	int weapon = 2; // 0:剣 1:弓 2:標
+	int weapon = 1; // 0:剣 1:弓 2:標
 	int facing = 1; // 1:右 -1:左
 } Player;
 typedef struct Enemy {
@@ -32,16 +32,18 @@ typedef struct Enemy {
 	bool patternChange;
 } Enemy;
 
-struct Boomarang
+struct Weapon
 {
 	Vector2 position;
 	Vector2 velosity;
 	int state = 0; // 0:待機 1:飛翔 2:帰還
 	int facing = 1;
-	int const flyTime = 90;
-	int flyTimer = 90;
+	int flyTime ;
+	int flyTimer ;
+	int charge = 0;
 };
-Boomarang weapon3;
+Weapon weapon2;
+Weapon weapon3;
 
 int backEndData = true;
 
@@ -69,6 +71,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.patternCD = 300;
 	enemy.attackPattern = rand() % 3 + 1;
 	enemy.patternChange = true;
+
+	weapon2.flyTime = 60;
+	weapon2.flyTimer = 60;
+	weapon3.flyTime = 90;
+	weapon3.flyTimer = 90;
 
 	// キー入力結果を受け取る箱
 	char keys[256] = {0};
@@ -180,10 +187,64 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 		}
 
-		/// 武器3(ブーメラン)
-		if (keys[DIK_L] && !preKeys[DIK_L])
+		/// 武器2(arrow)
+		
+		if (player.weapon == 1)
 		{
-			if (player.weapon == 2)
+			
+			if (weapon2.charge > 100)
+			{
+				weapon2.charge = 100;
+			}
+			if (!keys[DIK_K] && preKeys[DIK_K])
+			{
+				if (weapon2.state == 0)
+				{
+					weapon2.position.x = player.position.x;
+					weapon2.position.y = player.position.y;
+					weapon2.velosity.x = (float)weapon2.charge * player.facing/2;
+					weapon2.velosity.y = -5;
+					weapon2.state = 1;
+					weapon2.facing = player.facing;
+					weapon2.charge = 0;
+				}
+			}
+
+			if (weapon2.state == 1)
+			{
+				weapon2.flyTimer -= 1;
+				weapon2.velosity.y += 0.5f; // 重力
+				if (weapon2.flyTimer <= 0)
+				{
+					weapon2.state = 0;
+					weapon2.flyTimer = weapon2.flyTime;
+				}
+			}
+
+		}
+
+		if (weapon2.position.y > 700)
+		{
+			weapon2.velosity.x = 0;
+			weapon2.velosity.y = 0;
+		}
+
+		weapon2.position.x += weapon2.velosity.x;
+		weapon2.position.y += weapon2.velosity.y;
+
+		if (keys[DIK_K])
+		{
+			weapon2.charge++;
+		}
+		else
+		{
+			weapon2.charge = 0;
+		}
+
+		/// 武器3(ブーメラン)
+		if (player.weapon == 2)
+		{
+			if (keys[DIK_L] && !preKeys[DIK_L])
 			{
 				if (weapon3.state == 0)
 				{
@@ -194,10 +255,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					weapon3.facing = player.facing;
 				}
 			}
-		}
 
-		if (player.weapon == 2)
-		{
 			if (weapon3.state == 1)
 			{
 				weapon3.flyTimer -= 1;
@@ -224,7 +282,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		if (keys[DIK_F1] && !preKeys[DIK_F1])
 		{
-			backEndData = !backEndData;
+			backEndData = ~backEndData;
 		}		
 		///
 		/// ↑更新処理ここまで
@@ -236,6 +294,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		
 		Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), 50, 50, 0.0f, 0x0000FFFF,kFillModeSolid);
 		Novice::DrawBox(static_cast<int>(enemy.position.x), static_cast<int>(enemy.position.y), 50, 50, 0.0f, 0xFF0000FF, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(weapon2.position.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
 		Novice::DrawEllipse(static_cast<int>(weapon3.position.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
 
 		
@@ -250,7 +309,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 50, "pattern : %d", enemy.attackPattern);
 			Novice::ScreenPrintf(0, 70, "patternTimer : %d", enemy.patternTimer);
 			Novice::ScreenPrintf(0, 90, "patternCD : %d", enemy.patternCD);
-			Novice::ScreenPrintf(0, 110, "w3 timer : %d", weapon3.flyTimer);
+			Novice::ScreenPrintf(0, 110, "w2 timer : %d  charge : %d", weapon2.flyTimer, weapon2.charge);
+			Novice::ScreenPrintf(0, 130, "w3 timer : %d", weapon3.flyTimer);
 		}
 		///
 		/// ↑描画処理ここまで

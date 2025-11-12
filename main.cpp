@@ -2,6 +2,9 @@
 #include<math.h>
 #include<cstdlib>
 #include<time.h>
+
+const char kWindowTitle[] = "GC1C_08_ネイ_トゥーアウン";
+
 typedef struct Vector2 {
 	float x;
 	float y;
@@ -11,12 +14,18 @@ typedef struct Player {
 	float radius;
 	float speed;
 	int dashTimer;
-	int dashCoolTimer;
+	int const dashCoolTime=60;
+	int dashCoolTimer;	
 	int dashSpeed;
 	int velocity;
 	bool isJump;
 	bool isDash;
 	bool isHit;
+	int weapon;   // 0:剣 1:弓 2:標
+	int facing;   // 1:右 -1:左
+
+	static const int dashTime = 15;
+	static const int dashCoolTime = 60;
 } Player;
 typedef struct Enemy {
 	Vector2 position;
@@ -41,7 +50,18 @@ typedef struct Enemy {
 
 } Enemy;
 
-const char kWindowTitle[] = "GC1C_08_ネイ_トゥーアウン";
+struct Boomarang
+{
+	Vector2 position;
+	Vector2 velosity;
+	int state = 0; // 0:待機 1:飛翔 2:帰還
+	int facing = 1;
+	int const flyTime = 90;
+	int flyTimer = 90;
+};
+
+int backEndData = true;
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -53,7 +73,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	player.position.y = 640.0f;
 	player.radius = 64.0f;
 	player.speed = 5.0f;
-	player.dashCoolTimer = 180;
+	player.dashCoolTimer = 90;
 	player.dashTimer = 15;
 	player.dashSpeed = 30;
 	player.velocity = 20;
@@ -104,10 +124,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (keys[DIK_A])
 		{
 			dirX -= 1;
+			player.facing = -1;
 		}
 		if (keys[DIK_D])
 		{
 			dirX += 1;
+			player.facing = 1;
 		}
 		if (dirX != 0)
 		{
@@ -124,7 +146,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (player.isDash)
 		{
 			player.dashCoolTimer--;
-			if (player.dashCoolTimer >= 165)
+			if (player.dashCoolTimer >= player.dashCoolTime- player.dashTime)
 			{
 				player.speed = (float)player.dashSpeed;
 				player.dashTimer--;
@@ -132,14 +154,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (player.dashTimer <= 0)
 			{
 				
-				player.dashTimer = 15;
+				player.dashTimer = player.dashTime;
 				
 				player.speed = 5;
 			}
 		}
 		if (player.dashCoolTimer <= 0)
 		{
-			player.dashCoolTimer = 180;
+			player.dashCoolTimer = player.dashCoolTime;
 			player.isDash = false;
 		}
 		/// ジャンプ処理
@@ -197,6 +219,54 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				enemy.patternCD = 300;
 				enemy.patternChange = true;
 			}
+		}
+
+		/// 武器3(ブーメラン)
+		if (keys[DIK_L] && !preKeys[DIK_L])
+		{
+			if (player.weapon == 2)
+			{
+				if (weapon3.state == 0)
+				{
+					weapon3.position.x = player.position.x;
+					weapon3.position.y = player.position.y;
+					weapon3.velosity.x = 40.0f * player.facing;
+					weapon3.state = 1;
+					weapon3.facing = player.facing;
+				}
+			}
+		}
+
+		if (player.weapon == 2)
+		{
+			if (weapon3.state == 1)
+			{
+				weapon3.flyTimer -= 1;
+				weapon3.velosity.x -= weapon3.facing;
+				if (weapon3.velosity.x * weapon3.facing < 0)
+				{
+					weapon3.state = 2;
+				}
+			}
+			else if (weapon3.state == 2)
+			{
+				weapon3.flyTimer -= 1;
+				weapon3.velosity.x -= weapon3.facing;
+				if (weapon3.flyTimer <= 0)
+				{
+					weapon3.state = 0;
+					weapon3.flyTimer = weapon3.flyTime;
+				}
+			}
+		}
+		weapon3.position.x += weapon3.velosity.x;
+		weapon3.position.y += weapon3.velosity.y;
+
+
+		if (keys[DIK_F1] && !preKeys[DIK_F1])
+		{
+			backEndData = !backEndData;
+		}		
 		}
 		// Attack pattern 1: charge → 3 dashes (X-only)
 		if (enemy.attackPattern == 1)
@@ -313,6 +383,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
 		}
 		Novice::DrawBox(static_cast<int>(enemy.position.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
+		
+		Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), 50, 50, 0.0f, 0x0000FFFF,kFillModeSolid);
+		Novice::DrawBox(static_cast<int>(enemy.position.x), static_cast<int>(enemy.position.y), 50, 50, 0.0f, 0xFF0000FF, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(weapon3.position.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
+
+		
+		if (backEndData)
+		{
+			if (player.isJump)
+			{
+				Novice::ScreenPrintf(0, 30, "isJump");
+			}
+			Novice::ScreenPrintf(0, 0, "dashCooldown : %d", player.dashCoolTimer);
+			Novice::ScreenPrintf(0, 20, "dashTimer : %d", player.dashTimer);
+			Novice::ScreenPrintf(0, 50, "pattern : %d", enemy.attackPattern);
+			Novice::ScreenPrintf(0, 70, "patternTimer : %d", enemy.patternTimer);
+			Novice::ScreenPrintf(0, 90, "patternCD : %d", enemy.patternCD);
+			Novice::ScreenPrintf(0, 110, "w3 timer : %d", weapon3.flyTimer);
+		}
 		///
 		/// ↑描画処理ここまで
 		///

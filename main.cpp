@@ -447,62 +447,59 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				enemy.position.y = 640.0f; // ground Y fixed
 			}
 
-				if (enemy.isCharging) {
-					enemy.chargeTimer--;
-					enemy.speed = 0.0f;        // stand still while charging
-					enemy.position.y = 640.0f; // maintain ground Y
+			if (enemy.isCharging) {
+				enemy.chargeTimer--;
+				enemy.speed = 0.0f;        // stand still while charging
+				enemy.position.y = 640.0f; // maintain ground Y
 
-					if (enemy.chargeTimer <= 0) {
-						enemy.isCharging = false;
-						enemy.isDash = true;
-						enemy.dashTimer = enemy.dashTimerInitial;
-					}
-				}
-				else if (enemy.isDash) {
-					enemy.dashCoolTimer--;
-
-					if (enemy.dashCoolTimer >= (enemy.dashCoolTimerInitial - enemy.dashTimerInitial)) {
-						float dx = player.position.x - enemy.position.x;
-						float lengthX = fabsf(dx);
-						if (lengthX != 0.0f) {
-							dx /= lengthX;
-						}
-						enemy.position.x += dx * enemy.dashSpeed;
-						enemy.position.y = 640.0f;  // ground Y fixed
-
-						enemy.dashTimer--;
-					}
-					if (enemy.dashTimer <= 0) {
-						enemy.dashCount++;
-						enemy.isDash = false;
-						enemy.speed = enemy.speedInitial;
-
-						// 2) After completing a dash, face player again
-						if (player.position.x > enemy.position.x) {
-							enemy.direction = 1;
-						}
-						else {
-							enemy.direction = -1;
-						}
-
-						if (enemy.dashCount < enemy.maxDashCount) {
-							// start next charge
-							enemy.isCharging = true;
-							enemy.chargeTimer = 60;
-						}
-						else {
-							// done all dash attacks
-							enemy.dashCount = 0;
-							enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
-							enemy.attackPattern = 0; // or set next pattern
-						}
-					}
-				}
-
-				if (enemy.dashCoolTimer <= 0) {
-					enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
+				if (enemy.chargeTimer <= 0) {
+					// End charge → Start dash in locked direction
+					enemy.isCharging = false;
+					enemy.isDash = true;
+					enemy.dashTimer = enemy.dashTimerInitial;
 				}
 			}
+			else if (enemy.isDash) {
+				enemy.dashCoolTimer--;
+
+				// ❌ Don't track player's position here
+				// ✅ Dash in fixed direction set before dash
+				enemy.position.x += enemy.direction * enemy.dashSpeed;
+				enemy.position.y = 640.0f;
+
+				enemy.dashTimer--;
+
+				if (enemy.dashTimer <= 0) {
+					enemy.dashCount++;
+					enemy.isDash = false;
+					enemy.speed = enemy.speedInitial;
+
+					// 2) After completing a dash, face player again before next charge
+					if (player.position.x > enemy.position.x) {
+						enemy.direction = 1;
+					}
+					else {
+						enemy.direction = -1;
+					}
+
+					if (enemy.dashCount < enemy.maxDashCount) {
+						// start next charge
+						enemy.isCharging = true;
+						enemy.chargeTimer = 60;
+					}
+					else {
+						// done all dash attacks
+						enemy.dashCount = 0;
+						enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
+						enemy.attackPattern = 0; // reset or next pattern
+					}
+				}
+			}
+
+			if (enemy.dashCoolTimer <= 0) {
+				enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
+			}
+		}
 
 		// --- Collision check every frame ---
 			// Reset hit state

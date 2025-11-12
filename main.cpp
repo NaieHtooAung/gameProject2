@@ -56,7 +56,6 @@ struct Boomarang
 	int flyTimer = 90;
 };
 Boomarang weapon3;
-
 int backEndData = true;
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -100,7 +99,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.attackPattern = rand() % 2 + 1;
 	enemy.patternChange = true;
 
-	
+
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
@@ -150,8 +149,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (player.dashTimer <= 0)
 			{
 
-				player.dashTimer = player.dashTime;
-
 				player.speed = 5;
 			}
 		}
@@ -159,6 +156,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			player.dashCoolTimer = 180;
 			player.isDash = false;
+
 		}
 		/// ジャンプ処理
 		if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
@@ -177,246 +175,227 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			player.isJump = false;
 
 		}
-		/// 敵の移動
-		enemy.position.x += enemy.speed;
-		if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
-		{
-			enemy.speed *= -1;
-		}
-		if (enemy.patternCD >= 300)
-		{
-			if (enemy.patternChange)
+			/// 武器3(ブーメラン)
+			if (keys[DIK_L] && !preKeys[DIK_L])
 			{
-				enemy.patternTimer--;
-			}
-		}
-		// 敵がプレイヤーの方向を向く
-		if (player.position.x > enemy.position.x) {
-			enemy.direction = 1;  // 右
-		}
-		else {
-			enemy.direction = -1; // 左
-		}
-
-		/// パターン変更
-		if (enemy.patternTimer <= 0)
-		{
-			enemy.patternCD--;
-			enemy.patternChange = false;
-			enemy.patternTimer = 300;
-
-		}
-		if (enemy.patternTimer == 300)
-		{
-			enemy.patternCD--;
-			if (enemy.patternCD <= 0)
-			{
-				enemy.attackPattern = rand() % 2 + 1;
-				enemy.patternCD = 300;
-				enemy.patternChange = true;
-			}
-		}
-		// Attack pattern 1: charge → 3 dashes (X-only)
-		if (enemy.attackPattern == 1)
-		{
-			// 1) At the very start of charge, lock facing direction
-			if (!enemy.isCharging && !enemy.isDash && enemy.dashCount == 0 && enemy.dashCoolTimer == enemy.dashCoolTimerInitial) {
-				if (player.position.x > enemy.position.x) {
-					enemy.direction = 1;
+				if (player.weapon == 2)
+				{
+					if (weapon3.state == 0)
+					{
+						weapon3.position.x = player.position.x;
+						weapon3.position.y = player.position.y;
+						weapon3.velosity.x = 40.0f * player.facing;
+						weapon3.state = 1;
+						weapon3.facing = player.facing;
+					}
 				}
-				else {
-					enemy.direction = -1;
-				}
-				// Start charging
-				enemy.isCharging = true;
-				enemy.chargeTimer = 60;  // adjust as desired
-				enemy.position.y = 640.0f; // ground Y fixed
 			}
-
-		/// 武器3(ブーメラン)
-		if (keys[DIK_L] && !preKeys[DIK_L])
-		{
 			if (player.weapon == 2)
 			{
-				if (weapon3.state == 0)
+				if (weapon3.state == 1)
 				{
-					weapon3.position.x = player.position.x;
-					weapon3.position.y = player.position.y;
-					weapon3.velosity.x = 40.0f * player.facing;
-					weapon3.state = 1;
-					weapon3.facing = player.facing;
+					weapon3.flyTimer -= 1;
+					weapon3.velosity.x -= weapon3.facing;
+					if (weapon3.velosity.x * weapon3.facing < 0)
+					{
+						weapon3.state = 2;
+					}
+				}
+				else if (weapon3.state == 2)
+				{
+					weapon3.flyTimer -= 1;
+					weapon3.velosity.x -= weapon3.facing;
+					if (weapon3.flyTimer <= 0)
+					{
+						weapon3.state = 0;
+						weapon3.flyTimer = weapon3.flyTime;
+					}
 				}
 			}
-		}
+			weapon3.position.x += weapon3.velosity.x;
+			weapon3.position.y += weapon3.velosity.y;
 
-		if (player.weapon == 2)
-		{
-			if (weapon3.state == 1)
+
+			if (keys[DIK_F1] && !preKeys[DIK_F1])
 			{
-				weapon3.flyTimer -= 1;
-				weapon3.velosity.x -= weapon3.facing;
-				if (weapon3.velosity.x * weapon3.facing < 0)
-				{
-					weapon3.state = 2;
-				}
+				backEndData = !backEndData;
 			}
-			else if (weapon3.state == 2)
+			/// 敵の移動
+			enemy.position.x += enemy.speed;
+			if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
 			{
-				weapon3.flyTimer -= 1;
-				weapon3.velosity.x -= weapon3.facing;
-				if (weapon3.flyTimer <= 0)
+				enemy.speed *= -1;
+			}
+			if (enemy.patternCD >= 300)
+			{
+				if (enemy.patternChange)
 				{
-					weapon3.state = 0;
-					weapon3.flyTimer = weapon3.flyTime;
+					enemy.patternTimer--;
 				}
 			}
-		}
-		weapon3.position.x += weapon3.velosity.x;
-		weapon3.position.y += weapon3.velosity.y;
-
-
-		if (keys[DIK_F1] && !preKeys[DIK_F1])
-		{
-			backEndData = !backEndData;
-		}
-
-	// Attack pattern 1: charge → 3 dashes (X-only)
-	if (enemy.attackPattern == 1)
-	{
-		// 1) At the very start of charge, lock facing direction
-		if (!enemy.isCharging && !enemy.isDash && enemy.dashCount == 0 && enemy.dashCoolTimer == enemy.dashCoolTimerInitial) {
+			// 敵がプレイヤーの方向を向く
 			if (player.position.x > enemy.position.x) {
-				enemy.direction = 1;
+				enemy.direction = 1;  // 右
 			}
 			else {
-				enemy.direction = -1;
+				enemy.direction = -1; // 左
 			}
-			// Start charging
-			enemy.isCharging = true;
-			enemy.chargeTimer = 60;  // adjust as desired
-			enemy.position.y = 640.0f; // ground Y fixed
-		}
 
-		if (enemy.isCharging) {
-			enemy.chargeTimer--;
-			enemy.speed = 0.0f;        // stand still while charging
-			enemy.position.y = 640.0f; // maintain ground Y
+			/// パターン変更
+			if (enemy.patternTimer <= 0)
+			{
+				enemy.patternCD--;
+				enemy.patternChange = false;
+				enemy.patternTimer = 300;
 
-			if (enemy.chargeTimer <= 0) {
-				enemy.isCharging = false;
-				enemy.isDash = true;
-				enemy.dashTimer = enemy.dashTimerInitial;
 			}
-		}
-		else if (enemy.isDash) {
-			enemy.dashCoolTimer--;
-
-			if (enemy.dashCoolTimer >= (enemy.dashCoolTimerInitial - enemy.dashTimerInitial)) {
-				float dx = player.position.x - enemy.position.x;
-				float lengthX = fabsf(dx);
-				if (lengthX != 0.0f) {
-					dx /= lengthX;
+			if (enemy.patternTimer == 300)
+			{
+				enemy.patternCD--;
+				if (enemy.patternCD <= 0)
+				{
+					enemy.attackPattern = rand() % 2 + 1;
+					enemy.patternCD = 300;
+					enemy.patternChange = true;
 				}
-				enemy.position.x += dx * enemy.dashSpeed;
-				enemy.position.y = 640.0f;  // ground Y fixed
-
-				enemy.dashTimer--;
 			}
-			if (enemy.dashTimer <= 0) {
-				enemy.dashCount++;
-				enemy.isDash = false;
-				enemy.speed = enemy.speedInitial;
 
-				// 2) After completing a dash, face player again
-				if (player.position.x > enemy.position.x) {
-					enemy.direction = 1;
-				}
-				else {
-					enemy.direction = -1;
-				}
-
-				if (enemy.dashCount < enemy.maxDashCount) {
-					// start next charge
+			// Attack pattern 1: charge → 3 dashes (X-only)
+			if (enemy.attackPattern == 1)
+			{
+				// 1) At the very start of charge, lock facing direction
+				if (!enemy.isCharging && !enemy.isDash && enemy.dashCount == 0 && enemy.dashCoolTimer == enemy.dashCoolTimerInitial) {
+					if (player.position.x > enemy.position.x) {
+						enemy.direction = 1;
+					}
+					else {
+						enemy.direction = -1;
+					}
+					// Start charging
 					enemy.isCharging = true;
-					enemy.chargeTimer = 60;
+					enemy.chargeTimer = 60;  // adjust as desired
+					enemy.position.y = 640.0f; // ground Y fixed
 				}
-				else {
-					// done all dash attacks
-					enemy.dashCount = 0;
+
+				if (enemy.isCharging) {
+					enemy.chargeTimer--;
+					enemy.speed = 0.0f;        // stand still while charging
+					enemy.position.y = 640.0f; // maintain ground Y
+
+					if (enemy.chargeTimer <= 0) {
+						enemy.isCharging = false;
+						enemy.isDash = true;
+						enemy.dashTimer = enemy.dashTimerInitial;
+					}
+				}
+				else if (enemy.isDash) {
+					enemy.dashCoolTimer--;
+
+					if (enemy.dashCoolTimer >= (enemy.dashCoolTimerInitial - enemy.dashTimerInitial)) {
+						float dx = player.position.x - enemy.position.x;
+						float lengthX = fabsf(dx);
+						if (lengthX != 0.0f) {
+							dx /= lengthX;
+						}
+						enemy.position.x += dx * enemy.dashSpeed;
+						enemy.position.y = 640.0f;  // ground Y fixed
+
+						enemy.dashTimer--;
+					}
+					if (enemy.dashTimer <= 0) {
+						enemy.dashCount++;
+						enemy.isDash = false;
+						enemy.speed = enemy.speedInitial;
+
+						// 2) After completing a dash, face player again
+						if (player.position.x > enemy.position.x) {
+							enemy.direction = 1;
+						}
+						else {
+							enemy.direction = -1;
+						}
+
+						if (enemy.dashCount < enemy.maxDashCount) {
+							// start next charge
+							enemy.isCharging = true;
+							enemy.chargeTimer = 60;
+						}
+						else {
+							// done all dash attacks
+							enemy.dashCount = 0;
+							enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
+							enemy.attackPattern = 0; // or set next pattern
+						}
+					}
+				}
+
+				if (enemy.dashCoolTimer <= 0) {
 					enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
-					enemy.attackPattern = 0; // or set next pattern
 				}
+			}
+
+			// --- Collision check every frame ---
+				// Reset hit state
+			player.isHit = false;
+
+			float dx = player.position.x - enemy.position.x;
+			float dy = player.position.y - enemy.position.y;
+			float distSq = dx * dx + dy * dy;
+			float sumR = player.radius + enemy.radius;
+			if (distSq <= sumR * sumR) {
+				player.isHit = true;
+			}
+
+			///
+			/// ↑更新処理ここまで
+			///
+
+			///
+			/// ↓描画処理ここから
+			///
+
+			if (player.isHit)
+			{
+				Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
+			}
+			else
+			{
+				Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
+			}
+			Novice::DrawBox(static_cast<int>(enemy.position.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
+			Novice::DrawEllipse(static_cast<int>(weapon3.position.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
+
+
+			if (backEndData)
+			{
+				if (player.isJump)
+				{
+					Novice::ScreenPrintf(0, 30, "isJump");
+				}
+				Novice::ScreenPrintf(0, 0, "dashCooldown : %d", player.dashCoolTimer);
+				Novice::ScreenPrintf(0, 20, "dashTimer : %d", player.dashTimer);
+				Novice::ScreenPrintf(0, 50, "pattern : %d", enemy.attackPattern);
+				Novice::ScreenPrintf(0, 70, "patternTimer : %d", enemy.patternTimer);
+				Novice::ScreenPrintf(0, 90, "patternCD : %d", enemy.patternCD);
+				Novice::ScreenPrintf(0, 110, "enemy dir: %d", enemy.direction);
+				Novice::ScreenPrintf(0, 130, "isCharging: %d", enemy.isCharging);
+				Novice::ScreenPrintf(0, 150, "isDash: %d", enemy.isDash);
+				Novice::ScreenPrintf(0, 170, "w3 time : %d", weapon3.flyTime);
+			}
+			///
+			/// ↑描画処理ここまで
+			///
+
+			// フレームの終了
+			Novice::EndFrame();
+
+			// ESCキーが押されたらループを抜ける
+			if (preKeys[DIK_ESCAPE] == 0 && keys[DIK_ESCAPE] != 0) {
+				break;
 			}
 		}
 
-		if (enemy.dashCoolTimer <= 0) {
-			enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
-		}
+		// ライブラリの終了
+		Novice::Finalize();
+		return 0;
 	}
-
-	// --- Collision check every frame ---
-		// Reset hit state
-	player.isHit = false;
-
-	float dx = player.position.x - enemy.position.x;
-	float dy = player.position.y - enemy.position.y;
-	float distSq = dx * dx + dy * dy;
-	float sumR = player.radius + enemy.radius;
-	if (distSq <= sumR * sumR) {
-		player.isHit = true;
-	}
-
-	///
-	/// ↑更新処理ここまで
-	///
-
-	///
-	/// ↓描画処理ここから
-	///
-	
-	if (player.isHit)
-	{
-		Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
-	}
-	else
-	{
-		Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
-	}
-	Novice::DrawBox(static_cast<int>(enemy.position.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
-	Novice::DrawEllipse(static_cast<int>(weapon3.position.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
-
-
-	if (backEndData)
-	{
-		if (player.isJump)
-		{
-			Novice::ScreenPrintf(0, 30, "isJump");
-		}
-		Novice::ScreenPrintf(0, 0, "dashCooldown : %d", player.dashCoolTimer);
-		Novice::ScreenPrintf(0, 20, "dashTimer : %d", player.dashTimer);
-		Novice::ScreenPrintf(0, 50, "pattern : %d", enemy.attackPattern);
-		Novice::ScreenPrintf(0, 70, "patternTimer : %d", enemy.patternTimer);
-		Novice::ScreenPrintf(0, 90, "patternCD : %d", enemy.patternCD);
-		Novice::ScreenPrintf(0, 110, "enemy dir: %d", enemy.direction);
-		Novice::ScreenPrintf(0, 130, "isCharging: %d", enemy.isCharging);
-		Novice::ScreenPrintf(0, 150, "isDash: %d", enemy.isDash);
-		Novice::ScreenPrintf(0, 170, "w3 time : %d", weapon3.flyTime );
-	}
-	///
-	/// ↑描画処理ここまで
-	///
-
-	// フレームの終了
-	Novice::EndFrame();
-
-	// ESCキーが押されたらループを抜ける
-	if (preKeys[DIK_ESCAPE] == 0 && keys[DIK_ESCAPE] != 0) {
-		break;
-	}
-}
-
-// ライブラリの終了
-Novice::Finalize();
-return 0;
-}
-

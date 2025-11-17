@@ -13,9 +13,9 @@ typedef struct Player {
 	Vector2 position;
 	float radius;
 	float speed;
-	
+
 	int dashTimer;
-	
+
 	int dashCoolTimer;
 	int dashSpeed;
 	int velocity;
@@ -49,8 +49,18 @@ typedef struct Enemy {
 	bool patternChange;
 	bool isDash;
 
-	 Vector2 dashTargetPosition;
+	Vector2 dashTargetPosition;
 } Enemy;
+
+typedef struct Bullet {
+	Vector2 position;
+	float radius;
+	float speed;
+	bool isShot;
+	float velX;
+	float velY;
+} Bullet;
+
 
 struct Weapon
 {
@@ -58,8 +68,8 @@ struct Weapon
 	Vector2 velosity;
 	int state = 0; // 0:待機 1:飛翔 2:帰還
 	int facing = 1;
-	int flyTime ;
-	int flyTimer ;
+	int flyTime;
+	int flyTimer;
 	int charge = 0;
 };
 Weapon weapon2;
@@ -111,6 +121,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.isDash = false;
 	enemy.attackPattern = rand() % 2 + 1;
 	enemy.patternChange = true;
+
+	Bullet bullet[3];
+	for (int i = 0; i < 3; i++)
+	{
+		bullet[i].position.x = -100.0f;
+		bullet[i].position.y = -100.0f;
+		bullet[i].radius = 16.0f;
+		bullet[i].speed = 10.0f;
+		bullet[i].isShot = false;
+
+	}
 
 	weapon2.flyTime = 60;
 	weapon2.flyTimer = 60;
@@ -167,7 +188,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			if (player.dashTimer <= 0)
 			{
-				
+
 				player.speed = 5;
 			}
 		}
@@ -176,7 +197,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			player.dashTimer = 15;
 			player.dashCoolTimer = 180;
 			player.isDash = false;
-			
+
 		}
 		/// ジャンプ処理
 		if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
@@ -193,13 +214,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			player.velocity = 20;
 			player.position.y = 640;
 			player.isJump = false;
-			
+
 		}
 		/// 武器2(arrow)
-		
+
 		if (player.weapon == 1)
 		{
-			
+
 			if (weapon2.charge > 100)
 			{
 				weapon2.charge = 100;
@@ -210,7 +231,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				{
 					weapon2.position.x = player.position.x;
 					weapon2.position.y = player.position.y;
-					weapon2.velosity.x = (float)weapon2.charge * player.facing/2;
+					weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
 					weapon2.velosity.y = -5;
 					weapon2.state = 1;
 					weapon2.facing = player.facing;
@@ -292,71 +313,71 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			backEndData = !backEndData;
 		}
-			/// 武器3(ブーメラン)
-			if (keys[DIK_L] && !preKeys[DIK_L])
-			{
-				if (player.weapon == 2)
-				{
-					if (weapon3.state == 0)
-					{
-						weapon3.position.x = player.position.x;
-						weapon3.position.y = player.position.y;
-						weapon3.velosity.x = 40.0f * player.facing;
-						weapon3.state = 1;
-						weapon3.facing = player.facing;
-					}
-				}
-			}
+		/// 武器3(ブーメラン)
+		if (keys[DIK_L] && !preKeys[DIK_L])
+		{
 			if (player.weapon == 2)
 			{
-				if (weapon3.state == 1)
+				if (weapon3.state == 0)
 				{
-					weapon3.flyTimer -= 1;
-					weapon3.velosity.x -= weapon3.facing;
-					if (weapon3.velosity.x * weapon3.facing < 0)
-					{
-						weapon3.state = 2;
-					}
-				}
-				else if (weapon3.state == 2)
-				{
-					weapon3.flyTimer -= 1;
-					weapon3.velosity.x -= weapon3.facing;
-					if (weapon3.flyTimer <= 0)
-					{
-						weapon3.state = 0;
-						weapon3.flyTimer = weapon3.flyTime;
-					}
+					weapon3.position.x = player.position.x;
+					weapon3.position.y = player.position.y;
+					weapon3.velosity.x = 40.0f * player.facing;
+					weapon3.state = 1;
+					weapon3.facing = player.facing;
 				}
 			}
-			weapon3.position.x += weapon3.velosity.x;
-			weapon3.position.y += weapon3.velosity.y;
+		}
+		if (player.weapon == 2)
+		{
+			if (weapon3.state == 1)
+			{
+				weapon3.flyTimer -= 1;
+				weapon3.velosity.x -= weapon3.facing;
+				if (weapon3.velosity.x * weapon3.facing < 0)
+				{
+					weapon3.state = 2;
+				}
+			}
+			else if (weapon3.state == 2)
+			{
+				weapon3.flyTimer -= 1;
+				weapon3.velosity.x -= weapon3.facing;
+				if (weapon3.flyTimer <= 0)
+				{
+					weapon3.state = 0;
+					weapon3.flyTimer = weapon3.flyTime;
+				}
+			}
+		}
+		weapon3.position.x += weapon3.velosity.x;
+		weapon3.position.y += weapon3.velosity.y;
 
 
-			if (keys[DIK_F1] && !preKeys[DIK_F1])
+		if (keys[DIK_F1] && !preKeys[DIK_F1])
+		{
+			backEndData = !backEndData;
+		}
+		/// 敵の移動
+		enemy.position.x += enemy.speed;
+		if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
+		{
+			enemy.speed *= -1;
+		}
+		if (enemy.patternCD >= 300)
+		{
+			if (enemy.patternChange)
 			{
-				backEndData = !backEndData;
+				enemy.patternTimer--;
 			}
-			/// 敵の移動
-			enemy.position.x += enemy.speed;
-			if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
-			{
-				enemy.speed *= -1;
-			}
-			if (enemy.patternCD >= 300)
-			{
-				if (enemy.patternChange)
-				{
-					enemy.patternTimer--;
-				}
-			}
-			// 敵がプレイヤーの方向を向く
-			if (player.position.x > enemy.position.x) {
-				enemy.direction = 1;  // 右
-			}
-			else {
-				enemy.direction = -1; // 左
-			}
+		}
+		// 敵がプレイヤーの方向を向く
+		if (player.position.x > enemy.position.x) {
+			enemy.direction = 1;  // 右
+		}
+		else {
+			enemy.direction = -1; // 左
+		}
 
 		/// パターン変更
 		if (enemy.patternTimer <= 0)
@@ -461,7 +482,86 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
 			}
 		}
+		// --- Bullet shooting for pattern 2 ---
+		if (enemy.attackPattern == 2) {
+			enemy.speed = 0.0f; // stationary while shooting
+			// Let's use a counter to track how many bullets fired this burst
+			static int shotCount = 0;
+			static int shotTimer = 0;
+			const int delayBetweenShots = 10; // frames
 
+			// If not currently shooting a burst, start it
+			if (shotCount == 0 && shotTimer == 0) {
+				shotCount = 12;
+				shotTimer = delayBetweenShots;
+			}
+
+			if (shotCount > 0) {
+				shotTimer--;
+				if (shotTimer <= 0) {
+					// Find an inactive bullet in your bullet array
+					for (int i = 0; i < 3; i++) {
+						if (!bullet[i].isShot) {
+							// Compute direction to player
+							float dx = player.position.x - enemy.position.x;
+							float dy = player.position.y - enemy.position.y;
+							float len = sqrtf(dx * dx + dy * dy);
+							if (len != 0.0f) {
+								dx /= len;
+								dy /= len;
+							}
+
+							// Activate bullet
+							bullet[i].isShot = true;
+							bullet[i].position = enemy.position;
+							// Assign velocity
+							bullet[i].speed = 10.0f; // or whatever
+							// We need a velocity vector, so add that to the bullet struct
+							// (modify Bullet struct to have vel.x and vel.y)
+							bullet[i].velX = dx * bullet[i].speed;
+							bullet[i].velY = dy * bullet[i].speed;
+
+							break; // shoot only one bullet now
+						}
+					}
+
+					shotCount--;
+					shotTimer = delayBetweenShots;
+				}
+			}
+
+			// Update bullets
+			for (int i = 0; i < 3; i++) {
+				if (bullet[i].isShot) {
+					bullet[i].position.x += bullet[i].velX;
+					bullet[i].position.y += bullet[i].velY;
+					// If bullet goes off screen, reset
+					if (bullet[i].position.x < 0 || bullet[i].position.x > 1280 ||
+						bullet[i].position.y < 0 || bullet[i].position.y > 720) {
+						bullet[i].isShot = false;
+
+					}
+				}
+				if (shotCount <= 0 )
+				{
+					enemy.attackPattern = 0;
+					enemy.speed = enemy.speedInitial;
+					shotCount = 12;
+				}
+			}
+			Novice::ScreenPrintf(0, 210, "enemy dashCount : %d", shotCount);
+			
+		}
+		if (enemy.attackPattern == 0)
+		{
+			for (int i = 0; i < 3; i++)
+			{
+				bullet[i].position.x += bullet[i].velX;
+				bullet[i].position.y += bullet[i].velY;
+			}
+		}
+		
+		
 
 		// --- Collision check every frame ---
 			// Reset hit state
@@ -491,9 +591,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
 		}
+		for (int i = 0; i < 3; i++)
+		{
+			if (bullet[i].isShot)
+			{
+
+				Novice::DrawEllipse((int)bullet[i].position.x, (int)bullet[i].position.y, (int)bullet[i].radius, (int)bullet[i].radius, 0.0f, 0xffffffff, kFillModeSolid);
+
+
+			}
+		}
 		Novice::DrawBox(static_cast<int>(enemy.position.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
 		Novice::DrawEllipse(static_cast<int>(weapon3.position.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
-     Novice::DrawEllipse(static_cast<int>(weapon2.position.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(weapon2.position.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
 
 
 		if (backEndData)
@@ -512,21 +622,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 150, "isDash: %d", enemy.isDash);
 			Novice::ScreenPrintf(0, 170, "w2 timer : %d  charge : %d", weapon2.flyTimer, weapon2.charge);
 			Novice::ScreenPrintf(0, 190, "w3 timer : %d", weapon3.flyTimer);
+			
 		}
 		///
 		/// ↑描画処理ここまで
 		///
 
 			// フレームの終了
-			Novice::EndFrame();
+		Novice::EndFrame();
 
-			// ESCキーが押されたらループを抜ける
-			if (preKeys[DIK_ESCAPE] == 0 && keys[DIK_ESCAPE] != 0) {
-				break;
-			}
+		// ESCキーが押されたらループを抜ける
+		if (preKeys[DIK_ESCAPE] == 0 && keys[DIK_ESCAPE] != 0) {
+			break;
 		}
-
-		// ライブラリの終了
-		Novice::Finalize();
-		return 0;
 	}
+
+	// ライブラリの終了
+	Novice::Finalize();
+	return 0;
+}

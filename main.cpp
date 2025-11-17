@@ -559,6 +559,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						bullet[i].isShot = false;
 
 					}
+					
 				}
 				if (shotCount <= 0 )
 				{
@@ -578,9 +579,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				bullet[i].position.y += bullet[i].velY;
 			}
 		}
+		// --- Bullet‐Player collision check ---
+		for (int j = 0; j < 3; j++)
+		{
+			float bx = player.position.x - bullet[j].position.x;
+			float by = player.position.y - bullet[j].position.y;
+			float distSqB = bx * bx + by * by;
+			float sumRB = player.radius + bullet[j].radius;
+			if (distSqB <= sumRB * sumRB) {
+				player.isHit = true;
+				bullet[j].isShot = false;
+			}
+			else
+			{
+				player.isHit = false;
+			}
+		}
 		
-		
-
 		// --- Collision check every frame ---
 			// Reset hit state
 		player.isHit = false;

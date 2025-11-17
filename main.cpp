@@ -86,9 +86,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Player player;
 	player.position.x = 640.0f;
 	player.position.y = 640.0f;
-	player.radius = 64.0f;
+	player.radius = 32.0f;
 	player.speed = 5.0f;
-	player.weapon = 2;
+	player.weapon = 3; // 0:剣 1:弓 2:標
 	player.facing = 1;
 	player.dashCoolTimer = 180;
 	player.dashTimer = 15;
@@ -216,11 +216,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			player.isJump = false;
 
 		}
-		/// 武器2(arrow)
 
-		if (player.weapon == 1)
+		/// 武器 for debug
+		if (backEndData)
 		{
-
 			if (weapon2.charge > 100)
 			{
 				weapon2.charge = 100;
@@ -232,6 +231,73 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					weapon2.position.x = player.position.x;
 					weapon2.position.y = player.position.y;
 					weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
+					weapon2.velosity.y = -5;
+					weapon2.state = 1;
+					weapon2.facing = player.facing;
+					weapon2.charge = 0;
+				}
+			}
+
+			if (weapon2.state == 1)
+			{
+				weapon2.flyTimer -= 1;
+				weapon2.velosity.y += 0.5f; // 重力
+				if (weapon2.flyTimer <= 0)
+				{
+					weapon2.state = 0;
+					weapon2.flyTimer = weapon2.flyTime;
+				}
+			}
+
+			if (keys[DIK_L] && !preKeys[DIK_L])
+			{
+				if (weapon3.state == 0)
+				{
+					weapon3.position.x = player.position.x;
+					weapon3.position.y = player.position.y;
+					weapon3.velosity.x = 40.0f * player.facing;
+					weapon3.state = 1;
+					weapon3.facing = player.facing;
+				}
+			}
+
+			if (weapon3.state == 1)
+			{
+				weapon3.flyTimer -= 1;
+				weapon3.velosity.x -= weapon3.facing;
+				if (weapon3.velosity.x * weapon3.facing < 0)
+				{
+					weapon3.state = 2;
+				}
+			}
+			else if (weapon3.state == 2)
+			{
+				weapon3.flyTimer -= 1;
+				weapon3.velosity.x -= weapon3.facing;
+				if (weapon3.flyTimer <= 0)
+				{
+					weapon3.state = 0;
+					weapon3.flyTimer = weapon3.flyTime;
+				}
+			}
+		}
+
+		/// 武器2(arrow)
+		
+		if (player.weapon == 1)
+		{
+			
+			if (weapon2.charge > 100)
+			{
+				weapon2.charge = 100;
+			}
+			if (!keys[DIK_K] && preKeys[DIK_K])
+			{
+				if (weapon2.state == 0)
+				{
+					weapon2.position.x = player.position.x;
+					weapon2.position.y = player.position.y;
+					weapon2.velosity.x = (float)weapon2.charge * player.facing/2;
 					weapon2.velosity.y = -5;
 					weapon2.state = 1;
 					weapon2.facing = player.facing;
@@ -308,56 +374,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		weapon3.position.x += weapon3.velosity.x;
 		weapon3.position.y += weapon3.velosity.y;
 
+		
 
-		if (keys[DIK_F1] && !preKeys[DIK_F1])
-		{
-			backEndData = !backEndData;
-		}
-		/// 武器3(ブーメラン)
-		if (keys[DIK_L] && !preKeys[DIK_L])
-		{
-			if (player.weapon == 2)
-			{
-				if (weapon3.state == 0)
-				{
-					weapon3.position.x = player.position.x;
-					weapon3.position.y = player.position.y;
-					weapon3.velosity.x = 40.0f * player.facing;
-					weapon3.state = 1;
-					weapon3.facing = player.facing;
-				}
-			}
-		}
-		if (player.weapon == 2)
-		{
-			if (weapon3.state == 1)
-			{
-				weapon3.flyTimer -= 1;
-				weapon3.velosity.x -= weapon3.facing;
-				if (weapon3.velosity.x * weapon3.facing < 0)
-				{
-					weapon3.state = 2;
-				}
-			}
-			else if (weapon3.state == 2)
-			{
-				weapon3.flyTimer -= 1;
-				weapon3.velosity.x -= weapon3.facing;
-				if (weapon3.flyTimer <= 0)
-				{
-					weapon3.state = 0;
-					weapon3.flyTimer = weapon3.flyTime;
-				}
-			}
-		}
-		weapon3.position.x += weapon3.velosity.x;
-		weapon3.position.y += weapon3.velosity.y;
-
-
-		if (keys[DIK_F1] && !preKeys[DIK_F1])
-		{
-			backEndData = !backEndData;
-		}
 		/// 敵の移動
 		enemy.position.x += enemy.speed;
 		if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
@@ -449,7 +467,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				enemy.position.y = 640.0f;  // keeps Y fixed
 
 				enemy.dashTimer--;
-
+				
 				if (enemy.dashTimer <= 0) {
 					enemy.dashCount++;
 					enemy.isDash = false;
@@ -575,6 +593,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			player.isHit = true;
 		}
 
+		float bx = enemy.dashTargetPosition.x - enemy.position.x;
+		float ey = enemy.dashTargetPosition.y - enemy.position.y;
+		float distSqDTP = bx * bx + ey * ey;
+		if (distSqDTP <= enemy.radius * enemy.radius) {
+			enemy.dashTimer = 0;
+		}
+
+
+		if (keys[DIK_F1] && !preKeys[DIK_F1])
+		{
+			backEndData = !backEndData;
+		}
 		///
 		/// ↑更新処理ここまで
 		///
@@ -585,11 +615,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		if (player.isHit)
 		{
-			Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
+			Novice::DrawEllipse(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
 		}
 		else
 		{
-			Novice::DrawBox(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
+			Novice::DrawEllipse(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
 		}
 		for (int i = 0; i < 3; i++)
 		{

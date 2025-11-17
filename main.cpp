@@ -96,7 +96,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	player.speed = 5.0f;
 	player.weapon = 3; // 0:剣 1:弓 2:標
 	player.facing = 1;
-	player.dashCoolTimer = 180;
+	player.dashCoolTimer = 60;
 	player.dashTimer = 15;
 	player.dashSpeed = 30;
 	player.velocity.y = 20;
@@ -111,11 +111,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.radius = 64.0f;
 	enemy.speed = 3.0f;
 	enemy.speedInitial = enemy.speed;  // store initial
-	enemy.patternTimer = 300;
-	enemy.patternCD = 300;
+	enemy.patternTimer = 180;
+	enemy.patternCD = 180;
 	enemy.dashTargetPosition.x = 0.0f;
 	enemy.dashTargetPosition.y = 0.0f;
-	enemy.dashCoolTimer = 100;
+	enemy.dashCoolTimer = 90;
 	enemy.dashCoolTimerInitial = enemy.dashCoolTimer; // store initial
 	enemy.dashTimer = 15;
 	enemy.dashTimerInitial = enemy.dashTimer; // store initial
@@ -191,7 +191,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (player.isDash)
 		{
 			player.dashCoolTimer--;
-			if (player.dashCoolTimer >= player.dashCoolTimer - player.dashTimer)
+			if (player.dashCoolTimer >= player.dashCoolTime - player.dashTime)
 			{
 				player.speed = (float)player.dashSpeed;
 				player.dashTimer--;
@@ -204,8 +204,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		if (player.dashCoolTimer <= 0)
 		{
-			player.dashTimer = 15;
-			player.dashCoolTimer = 180;
+			player.dashTimer = player.dashTime;
+			player.dashCoolTimer = player.dashCoolTime;
 			player.isDash = false;
 
 		}
@@ -281,6 +281,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				weapon1.charge = 0;
 			}
+
 			if (weapon2.charge > 100)
 			{
 				weapon2.charge = 100;
@@ -489,7 +490,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			enemy.speed *= -1;
 		}
-		if (enemy.patternCD >= 300)
+		if (enemy.patternCD >= 180)
 		{
 			if (enemy.patternChange)
 			{
@@ -509,16 +510,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			enemy.patternCD--;
 			enemy.patternChange = false;
-			enemy.patternTimer = 300;
+			enemy.patternTimer = 180;
 
 		}
-		if (enemy.patternTimer == 300)
+		if (enemy.patternTimer == 180)
 		{
 			enemy.patternCD--;
 			if (enemy.patternCD <= 0)
 			{
 				enemy.attackPattern = rand() % 2 + 1;
-				enemy.patternCD = 300;
+				enemy.patternCD = 180;
 				enemy.patternChange = true;
 			}
 		}

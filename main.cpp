@@ -9,6 +9,9 @@ typedef struct Vector2 {
 	float x;
 	float y;
 } Vector2;
+
+Vector2 camera;
+
 typedef struct Player {
 	Vector2 position;
 	float radius;
@@ -18,7 +21,7 @@ typedef struct Player {
 
 	int dashCoolTimer;
 	int dashSpeed;
-	int velocity;
+	Vector2 velocity;
 	bool isJump;
 	bool isDash;
 	bool isHit;
@@ -93,7 +96,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	player.dashCoolTimer = 180;
 	player.dashTimer = 15;
 	player.dashSpeed = 30;
-	player.velocity = 20;
+	player.velocity.y = 20;
+	player.velocity.x = 0;
 	player.isJump = false;
 	player.isDash = false;
 	player.isHit = false;
@@ -206,14 +210,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		if (player.isJump)
 		{
-			player.velocity -= 1;
-			player.position.y -= player.velocity;
+			player.velocity.y -= 1;
+			player.position.y -= player.velocity.y;
 		}
 		if (player.position.y >= 640)
 		{
-			player.velocity = 20;
+			player.velocity.y = 20;
 			player.position.y = 640;
 			player.isJump = false;
+			if (player.velocity.x > 1)
+			{
+				player.velocity.x -= 1;
+			}
+			else if (player.velocity.x < -1)
+			{
+				player.velocity.x += 1;
+			}
+			else
+			{
+				player.velocity.x = 0;
+			}
 
 		}
 
@@ -255,7 +271,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				{
 					weapon3.position.x = player.position.x;
 					weapon3.position.y = player.position.y;
-					weapon3.velosity.x = 40.0f * player.facing;
+					weapon3.velosity.x = 30.0f * player.facing;
 					weapon3.state = 1;
 					weapon3.facing = player.facing;
 				}
@@ -345,7 +361,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				{
 					weapon3.position.x = player.position.x;
 					weapon3.position.y = player.position.y;
-					weapon3.velosity.x = 40.0f * player.facing;
+					weapon3.velosity.x = 30.0f * player.facing;
 					weapon3.state = 1;
 					weapon3.facing = player.facing;
 				}
@@ -615,6 +631,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			enemy.dashTimer = 0;
 		}
 
+		//bump
+		if (player.isHit)
+		{
+			player.velocity.y += 1;
+			player.position.x = enemy.position.x + sumR * cosf(atan2f(dy, ax));
+			player.position.y = enemy.position.y + sumR * sinf(atan2f(dy, ax));
+			float trackInnerDirection = -atan2f(0, ax);
+			//player.velocity.x = 5 * cosf(trackInnerDirection);
+
+			if (enemy.isDash)
+			{
+				player.velocity.x = 15 * cosf(trackInnerDirection); //方向判定彈射
+				player.velocity.y = 25;
+				player.isJump = true;
+			}
+			
+			
+		}
+
+		player.position.x += player.velocity.x;
+
+		
+		//camera
+		if (player.position.x < 300)
+		{
+			camera.x = 300-player.position.x;
+		}
+		else if (player.position.x >= 300&&player.position.x <= 1000)
+		{
+			camera.x = 0;
+		}
+		else if ( player.position.x > 1000)
+		{
+			camera.x = 1000- player.position.x;;
+		}
 
 		if (keys[DIK_F1] && !preKeys[DIK_F1])
 		{
@@ -628,27 +679,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 
+		Novice::DrawBox(static_cast<int>( camera.x), 0, 1280, 720, 0.0f, 0x87CEEBFF, kFillModeSolid); // sky
+
 		if (player.isHit)
 		{
-			Novice::DrawEllipse(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
+			Novice::DrawEllipse(static_cast<int>(player.position.x+ camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
 		}
 		else
 		{
-			Novice::DrawEllipse(static_cast<int>(player.position.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
+			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
 		}
 		for (int i = 0; i < 3; i++)
 		{
 			if (bullet[i].isShot)
 			{
 
-				Novice::DrawEllipse((int)bullet[i].position.x, (int)bullet[i].position.y, (int)bullet[i].radius, (int)bullet[i].radius, 0.0f, 0xffffffff, kFillModeSolid);
+				Novice::DrawEllipse((int)(bullet[i].position.x + camera.x), (int)bullet[i].position.y, (int)bullet[i].radius, (int)bullet[i].radius, 0.0f, 0xffffffff, kFillModeSolid);
 
 
 			}
 		}
-		Novice::DrawBox(static_cast<int>(enemy.position.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
-		Novice::DrawEllipse(static_cast<int>(weapon3.position.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
-		Novice::DrawEllipse(static_cast<int>(weapon2.position.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
 
 
 		if (backEndData)
@@ -667,6 +720,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 150, "isDash: %d", enemy.isDash);
 			Novice::ScreenPrintf(0, 170, "w2 timer : %d  charge : %d", weapon2.flyTimer, weapon2.charge);
 			Novice::ScreenPrintf(0, 190, "w3 timer : %d", weapon3.flyTimer);
+			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x,player.position.y);
+			Novice::ScreenPrintf(0, 430, "playerV x : %0.2f  y : %0.2f", player.velocity.x,player.velocity.y);
 			
 		}
 		///

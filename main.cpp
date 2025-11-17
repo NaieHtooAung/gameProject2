@@ -75,7 +75,9 @@ struct Weapon
 	int flyTime;
 	int flyTimer;
 	int charge = 0;
+	int isHit = 0;
 };
+Weapon weapon1;
 Weapon weapon2;
 Weapon weapon3;
 
@@ -88,7 +90,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
 	Player player;
-	player.position.x = 640.0f;
+	player.position.x = 320.0f;
 	player.position.y = 640.0f;
 	player.radius = 32.0f;
 	player.speed = 5.0f;
@@ -104,7 +106,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	player.isHit = false;
 
 	Enemy enemy;
-	enemy.position.x = 640.0f;
+	enemy.position.x = 840.0f;
 	enemy.position.y = 640.0f;
 	enemy.radius = 64.0f;
 	enemy.speed = 3.0f;
@@ -139,6 +141,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	}
 
+	weapon1.flyTime = 15;
+	weapon1.flyTimer = 15;
 	weapon2.flyTime = 60;
 	weapon2.flyTimer = 60;
 	weapon3.flyTime = 90;
@@ -238,6 +242,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// 武器 for debug
 		if (backEndData)
 		{
+			if (weapon1.charge > 100)
+			{
+				weapon1.charge = 100;
+			}
+			if (!keys[DIK_J] && preKeys[DIK_J])
+			{
+				if (weapon1.state == 0)
+				{
+					weapon1.position.x = player.position.x+player.facing*48;
+					weapon1.position.y = player.position.y;
+					weapon1.state = 1;
+					weapon1.facing = player.facing;
+					weapon1.charge = 0;
+				}
+			}
+
+			if (weapon1.state == 1)
+			{
+				weapon1.flyTimer -= 1;
+				if (weapon1.isHit)
+				{
+
+				}
+
+				if (weapon1.flyTimer <= 0)
+				{
+					weapon1.state = 0;
+					weapon1.flyTimer = weapon1.flyTime;
+				}
+			}
+
+			if (keys[DIK_J])
+			{
+				weapon1.charge++;
+			}
+			else
+			{
+				weapon1.charge = 0;
+			}
 			if (weapon2.charge > 100)
 			{
 				weapon2.charge = 100;
@@ -297,6 +340,52 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					weapon3.state = 0;
 					weapon3.flyTimer = weapon3.flyTime;
 				}
+			}
+		}
+
+		/// 武器1(Sword)
+
+		if (player.weapon == 0)
+		{
+
+			if (weapon1.charge > 100)
+			{
+				weapon1.charge = 100;
+			}
+			if (!keys[DIK_J] && preKeys[DIK_J])
+			{
+				if (weapon1.state == 0)
+				{
+					weapon1.position.x = player.position.x;
+					weapon1.position.y = player.position.y;
+					weapon1.state = 1;
+					weapon1.facing = player.facing;
+					weapon1.charge = 0;
+				}
+			}
+
+			if (weapon1.state == 1)
+			{
+				weapon1.flyTimer -= 1;
+				if (weapon1.isHit)
+				{
+					
+				}
+
+				if (weapon1.flyTimer <= 0)
+				{
+					weapon1.state = 0;
+					weapon1.flyTimer = weapon1.flyTime;
+				}
+			}
+
+			if (keys[DIK_J])
+			{
+				weapon1.charge++;
+			}
+			else
+			{
+				weapon1.charge = 0;
 			}
 		}
 
@@ -592,7 +681,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					shotCount = 12;
 				}
 			}
-			Novice::ScreenPrintf(0, 210, "enemy dashCount : %d", shotCount);
+			Novice::ScreenPrintf(0, 650, "enemy dashCount : %d", shotCount);
 			
 		}
 		if (enemy.attackPattern == 0)
@@ -710,6 +799,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
 		Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
 		Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
 
 
 		if (backEndData)
@@ -723,11 +813,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 50, "pattern : %d", enemy.attackPattern);
 			Novice::ScreenPrintf(0, 70, "patternTimer : %d", enemy.patternTimer);
 			Novice::ScreenPrintf(0, 90, "patternCD : %d", enemy.patternCD);
-			Novice::ScreenPrintf(0, 110, "enemy dir: %d", enemy.direction);
+			Novice::ScreenPrintf(0, 110, "enemy dir: %d  target dir: %d", enemy.direction, enemy.dashDirection);
 			Novice::ScreenPrintf(0, 130, "isCharging: %d", enemy.isCharging);
 			Novice::ScreenPrintf(0, 150, "isDash: %d", enemy.isDash);
-			Novice::ScreenPrintf(0, 170, "w2 timer : %d  charge : %d", weapon2.flyTimer, weapon2.charge);
-			Novice::ScreenPrintf(0, 190, "w3 timer : %d", weapon3.flyTimer);
+			Novice::ScreenPrintf(0, 170, "w1 timer : %d  charge : %d", weapon1.flyTimer, weapon1.charge);
+			Novice::ScreenPrintf(0, 190, "w2 timer : %d  charge : %d", weapon2.flyTimer, weapon2.charge);
+			Novice::ScreenPrintf(0, 210, "w3 timer : %d", weapon3.flyTimer);
 			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x,player.position.y);
 			Novice::ScreenPrintf(0, 430, "playerV x : %0.2f  y : %0.2f", player.velocity.x,player.velocity.y);
 			

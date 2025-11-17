@@ -42,6 +42,7 @@ typedef struct Enemy {
 	int dashCoolTimer;
 	int dashSpeed;
 	int direction;
+	int dashDirection;
 	int dashCount;        // how many dash attacks have been done
 	int maxDashCount;     // maximum number of dash attacks (e.g., 3)
 	float speedInitial;
@@ -120,6 +121,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.dashCount = 0;
 	enemy.maxDashCount = 2;
 	enemy.direction = 0;
+	enemy.dashDirection = 0;
 	enemy.chargeTimer = 60;     // e.g., 60 frames charging
 	enemy.isCharging = false;
 	enemy.isDash = false;
@@ -464,22 +466,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					// **Lock the target position at dash‐start**
 					enemy.dashTargetPosition.x = player.position.x;
 					enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters
+					if (enemy.dashTargetPosition.x > enemy.position.x) {
+						enemy.dashDirection = 1;
+					}
+					else {
+						enemy.dashDirection = -1;
+					}
 				}
 			}
 			else if (enemy.isDash) {
 				enemy.dashCoolTimer--;
 
 				// Compute direction vector toward the locked target
-				float dx = enemy.dashTargetPosition.x - enemy.position.x;
-				float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
-				float len = sqrtf(dx * dx + dy * dy);
-				if (len != 0.0f) {
-					dx /= len;
-					dy /= len;
-				}
-
+				//float dx = enemy.dashTargetPosition.x - enemy.position.x;
+				//float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
+				//float len = sqrtf(dx * dx + dy * dy);
+				//if (len != 0.0f) {
+				//	dx /= len;
+				//	dy /= len;
+				//}
+				
 				// If you only want horizontal (X axis) dash and maintain ground Y:
-				enemy.position.x += dx * enemy.dashSpeed;
+				enemy.position.x += enemy.dashDirection *  enemy.dashSpeed;
 				enemy.position.y = 640.0f;  // keeps Y fixed
 
 				enemy.dashTimer--;
@@ -489,13 +497,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemy.isDash = false;
 					enemy.speed = enemy.speedInitial;
 
-					// After finishing dash, face player again for next charge
-					if (player.position.x > enemy.position.x) {
-						enemy.direction = 1;
-					}
-					else {
-						enemy.direction = -1;
-					}
+					//// After finishing dash, face player again for next charge
+					//if (enemy.dashTargetPosition.x > enemy.position.x) {
+					//	enemy.dashDirection = 1;
+					//}
+					//else {
+					//	enemy.dashDirection = -1;
+					//}
 
 					if (enemy.dashCount < enemy.maxDashCount) {
 						// start next charge
@@ -624,12 +632,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			player.isHit = true;
 		}
 
-		float bx = enemy.dashTargetPosition.x - enemy.position.x;
+		/*float bx = enemy.dashTargetPosition.x - enemy.position.x;
 		float ey = enemy.dashTargetPosition.y - enemy.position.y;
 		float distSqDTP = bx * bx + ey * ey;
 		if (distSqDTP <= enemy.radius * enemy.radius) {
 			enemy.dashTimer = 0;
-		}
+		}*/
 
 		//bump
 		if (player.isHit)

@@ -25,6 +25,7 @@ typedef struct Player {
 	bool isJump;
 	bool isDash;
 	bool isHit;
+	bool isDamage;
 	int weapon;   // 0:剣 1:弓 2:標
 	int facing;   // 1:右 -1:左
 
@@ -65,6 +66,12 @@ typedef struct Bullet {
 	float velY;
 } Bullet;
 
+typedef struct SkyBall {
+	Vector2 position;
+	float radius;
+	int speed;
+	bool isFalling;
+}SkyBall;
 
 struct Weapon
 {
@@ -105,6 +112,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	player.isJump = false;
 	player.isDash = false;
 	player.isHit = false;
+	player.isDamage = false;
 
 	Enemy enemy;
 	enemy.position.x = 840.0f;
@@ -128,7 +136,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.chargeTimer = 60;     // e.g., 60 frames charging
 	enemy.isCharging = false;
 	enemy.isDash = false;
-	enemy.attackPattern = rand() % 2 + 1;
+	enemy.attackPattern = rand() % 3 + 1;
 	enemy.patternChange = true;
 
 	Bullet bullet[3];
@@ -141,7 +149,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		bullet[i].isShot = false;
 
 	}
-
+	SkyBall sb[3];
+	for (int i = 0; i < 3; i++)
+	{
+		sb[i].position.x = rand() % 1230 + 50.0f;
+		sb[i].position.y = -100.0f;
+		sb[i].radius = 50.0f;
+		sb[i].speed = 10;
+		sb[i].isFalling = false;
+	}
+	
 	weapon1.flyTime = 15;
 	weapon1.flyTimer = 15;
 	weapon2.flyTime = 60;
@@ -535,7 +552,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			enemy.patternCD--;
 			if (enemy.patternCD <= 0)
 			{
-				enemy.attackPattern = rand() % 2 + 1;
+				enemy.attackPattern = rand() % 3 + 1;
 				enemy.patternCD = 180;
 				enemy.patternChange = true;
 			}
@@ -702,6 +719,54 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 650, "enemy dashCount : %d", shotCount);
 
 		}
+		if (enemy.attackPattern == 3) {
+			for (int i = 0; i < 3; i++) {
+				// 落下を初めて始める or 再開させたいとき
+				if (!sb[i].isFalling) {
+					// もし画面外（もしくは初期位置）にあるなら、再スタート
+					// 例えば、Y座標が最初の落下開始位置より上ならリセット
+					if (sb[i].position.y <= 0 /* or some reset Y */) {
+						sb[i].isFalling = true;
+					}
+				}
+
+				if (sb[i].isFalling) {
+					sb[i].position.y += sb[i].speed;
+				}
+
+				// 画面下に出たら落下を終了（落下が終わったことを示す）
+				if (sb[i].position.y > 720) {
+					sb[i].isFalling = false;
+					// **ここで再初期化も検討**：落下が終わったら次に落とすまで待つ
+					sb[i].position.y = 0; // 例：上から落としたいなら0に戻す
+					// もし横位置をランダムにしたいならここでやる
+					sb[i].position.x = (float)(rand() % 1230 + 50);
+				}
+
+				// プレイヤーとの当たり判定
+				float dx = player.position.x - sb[i].position.x;
+				float dy = player.position.y - sb[i].position.y;
+				float distance = sqrtf(dx * dx + dy * dy);
+				float radius = player.radius + sb[i].radius;
+				if (distance < radius) {
+					player.isDamage = true;
+					// ダメージ処理（必要な処理をここで）
+					// 例として、当たったらボールをリセット:
+					sb[i].isFalling = false;
+					sb[i].position.y = 0;
+					sb[i].position.x = (float)(rand() % 1230 + 50);
+				}
+			}
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			if (sb[i].isFalling)
+			{
+				sb[i].position.y += sb[i].speed;
+			}
+			
+		}
+		
 		if (enemy.attackPattern == 0)
 		{
 			for (int i = 0; i < 3; i++)
@@ -846,6 +911,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else
 		{
 			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			if (sb[i].isFalling)
+			{
+				Novice::DrawEllipse(static_cast<int>(sb[i].position.x + camera.x), static_cast<int>(sb[i].position.y), (int)sb[i].radius, (int)sb[i].radius, 0.0f, 0x0000FFFF, kFillModeSolid);
+			}
+		}
+		if (player.isDamage)
+		{
+			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, RED, kFillModeSolid);
 		}
 		for (int i = 0; i < 3; i++)
 		{

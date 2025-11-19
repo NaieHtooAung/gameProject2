@@ -82,6 +82,17 @@ Weapon weapon1;
 Weapon weapon2;
 Weapon weapon3;
 
+struct Sprite {
+	Vector2 position;
+	float radius;
+	int texture;
+	int frame;
+};
+Sprite playerWalkSprite;
+Sprite playerW1Sprite;
+Sprite playerW2Sprite;
+Sprite playerW3Sprite;
+
 int backEndData = true;
 
 
@@ -150,7 +161,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	weapon3.flyTimer = 90;
 
 	//imageResourceLoad();
-	//int playerTexture = Novice::LoadTexture("./Resource/image/player.png");
+	int playerWalkTexture = Novice::LoadTexture("./Resource/image/playerWalk.png");
+	int playerW1Texture = Novice::LoadTexture("./Resource/image/playerW1.png");
+	int playerW2Texture = Novice::LoadTexture("./Resource/image/playerW2.png");
+	int playerW3Texture = Novice::LoadTexture("./Resource/image/playerW3.png");
 	//int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
 
@@ -358,6 +372,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		if (!keys[DIK_J] && preKeys[DIK_J])
 		{
+			player.weapon= 0;
 			if (weapon1.state == 0)
 			{
 				weapon1.position.x = player.position.x + player.facing * 48;
@@ -401,6 +416,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		if (!keys[DIK_K] && preKeys[DIK_K])
 		{
+			player.weapon = 1;
 			if (weapon2.state == 0)
 			{
 				weapon2.position.x = player.position.x;
@@ -452,6 +468,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// 武器3(ブーメラン)
 		if (keys[DIK_L] && !preKeys[DIK_L])
 		{
+			player.weapon = 2;
 			if (weapon3.state == 0)
 			{
 				weapon3.position.x = player.position.x;
@@ -845,8 +862,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		else
 		{
-			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeSolid);
+			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
 		}
+
+		Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32),playerWalkSprite.frame,0, 80, 80,
+			playerWalkTexture,
+			0.5f, 1.0f, 0.0f, WHITE);
+		if (player.weapon == 0)
+		{
+			Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerW2Sprite.frame, 0, 80, 80,
+				playerW1Texture,
+				0.5f, 1.0f, 0.0f, WHITE);
+		}
+		else if(player.weapon == 1)
+		{
+			Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerW2Sprite.frame, 0, 80, 80,
+				playerW2Texture,
+				0.5f, 1.0f, 0.0f, WHITE);
+		}
+		else if (player.weapon == 2)
+		{
+			Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerW3Sprite.frame, 0, 80, 80,
+				playerW3Texture,
+				0.5f, 1.0f, 0.0f, WHITE);
+		}
+
 		for (int i = 0; i < 3; i++)
 		{
 			if (bullet[i].isShot)

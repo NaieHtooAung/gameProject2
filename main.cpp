@@ -738,46 +738,51 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		if (enemy.attackPattern == 3) {
 			for (int i = 0; i < 3; i++) {
-				// 落下を初めて始める or 再開させたいとき
+				// If this ball is not currently falling, start it
 				if (!sb[i].isFalling) {
-					// もし画面外（もしくは初期位置）にあるなら、再スタート
-					// 例えば、Y座標が最初の落下開始位置より上ならリセット
-					if (sb[i].position.y <= 0 /* or some reset Y */) {
-						sb[i].isFalling = true;
-					}
+					sb[i].isFalling = true;
+					sb[i].position.y = -100.0f;      // start at top
+					sb[i].position.x = (float)(rand() % 1230 + 50);
 				}
 
+				// If falling, move it
 				if (sb[i].isFalling) {
 					sb[i].position.y += sb[i].speed;
 				}
 
-				// 画面下に出たら落下を終了（落下が終わったことを示す）
+				// If it exits screen, reset it
 				if (sb[i].position.y > 720) {
 					sb[i].isFalling = false;
-					// **ここで再初期化も検討**：落下が終わったら次に落とすまで待つ
-					sb[i].position.y = 0; // 例：上から落としたいなら0に戻す
-					// もし横位置をランダムにしたいならここでやる
+					sb[i].position.y = -100.0f;
 					sb[i].position.x = (float)(rand() % 1230 + 50);
 				}
 
-				// プレイヤーとの当たり判定
+				// Collision with player
 				float dx = player.position.x - sb[i].position.x;
 				float dy = player.position.y - sb[i].position.y;
 				float distance = sqrtf(dx * dx + dy * dy);
-				float radius = player.radius + sb[i].radius;
-				if (distance < radius) {
+				float combinedRadius = player.radius + sb[i].radius;
+				if (distance < combinedRadius) {
+					// Hit detected
 					player.isDamage = true;
-					// ダメージ処理（必要な処理をここで）
-					// 例として、当たったらボールをリセット:
-					sb[i].isFalling = false;
-					sb[i].position.y = 0;
-					sb[i].position.x = (float)(rand() % 1230 + 50);
+					if (player.isDamage)
+					{
+						// Immediately hide/disable this skyball
+						sb[i].isFalling = false;
+						sb[i].position.y = -100.0f;
+						sb[i].position.x = (float)(rand() % 1230 + 50);
+						player.isDamage = false;
+					}
+				
+					// **Process damage logic here** (e.g., reduce player HP, play effect)
+
 				}
 			}
 		}
+
 		for (int i = 0; i < 3; i++)
 		{
-			if (sb[i].isFalling)
+			if (sb[i].isFalling && enemy.attackPattern != 3)
 			{
 				sb[i].position.y += sb[i].speed;
 			}

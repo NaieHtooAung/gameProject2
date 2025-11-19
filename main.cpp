@@ -76,6 +76,7 @@ struct Weapon
 	int flyTimer;
 	int charge = 0;
 	int isHit = 0;
+	int hitReady = false;
 };
 Weapon weapon1;
 Weapon weapon2;
@@ -147,6 +148,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	weapon2.flyTimer = 60;
 	weapon3.flyTime = 90;
 	weapon3.flyTimer = 90;
+
+	//imageResourceLoad();
+	//int playerTexture = Novice::LoadTexture("./Resource/image/player.png");
+	//int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
+	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -239,191 +245,190 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 
-		/// 武器 for debug
-		if (backEndData)
-		{
-			if (weapon1.charge > 100)
-			{
-				weapon1.charge = 100;
-			}
-			if (!keys[DIK_J] && preKeys[DIK_J])
-			{
-				if (weapon1.state == 0)
-				{
-					weapon1.position.x = player.position.x+player.facing*48;
-					weapon1.position.y = player.position.y;
-					weapon1.state = 1;
-					weapon1.facing = player.facing;
-					weapon1.charge = 0;
-				}
-			}
+		///// 武器 for debug
+		//if (backEndData)
+		//{
+		//	if (weapon1.charge > 100)
+		//	{
+		//		weapon1.charge = 100;
+		//	}
+		//	if (!keys[DIK_J] && preKeys[DIK_J])
+		//	{
+		//		if (weapon1.state == 0)
+		//		{
+		//			weapon1.position.x = player.position.x+player.facing*48;
+		//			weapon1.position.y = player.position.y;
+		//			weapon1.state = 1;
+		//			weapon1.facing = player.facing;
+		//			weapon1.charge = 0;
+		//		}
+		//	}
 
-			if (weapon1.state == 1)
-			{
-				weapon1.flyTimer -= 1;
-				if (weapon1.isHit)
-				{
+		//	if (weapon1.state == 1)
+		//	{
+		//		weapon1.flyTimer -= 1;
+		//		if (weapon1.isHit)
+		//		{
 
-				}
+		//		}
 
-				if (weapon1.flyTimer <= 0)
-				{
-					weapon1.state = 0;
-					weapon1.flyTimer = weapon1.flyTime;
-				}
-			}
+		//		if (weapon1.flyTimer <= 0)
+		//		{
+		//			weapon1.state = 0;
+		//			weapon1.flyTimer = weapon1.flyTime;
+		//		}
+		//	}
 
-			if (keys[DIK_J])
-			{
-				weapon1.charge++;
-			}
-			else
-			{
-				weapon1.charge = 0;
-			}
+		//	if (keys[DIK_J])
+		//	{
+		//		weapon1.charge++;
+		//	}
+		//	else
+		//	{
+		//		weapon1.charge = 0;
+		//	}
 
-			if (weapon2.charge > 100)
-			{
-				weapon2.charge = 100;
-			}
-			if (!keys[DIK_K] && preKeys[DIK_K])
-			{
-				if (weapon2.state == 0)
-				{
-					weapon2.position.x = player.position.x;
-					weapon2.position.y = player.position.y;
-					weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
-					weapon2.velosity.y = -5;
-					weapon2.state = 1;
-					weapon2.facing = player.facing;
-					weapon2.charge = 0;
-				}
-			}
+		//	if (weapon2.charge > 100)
+		//	{
+		//		weapon2.charge = 100;
+		//	}
+		//	if (!keys[DIK_K] && preKeys[DIK_K])
+		//	{
+		//		if (weapon2.state == 0)
+		//		{
+		//			weapon2.position.x = player.position.x;
+		//			weapon2.position.y = player.position.y;
+		//			weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
+		//			weapon2.velosity.y = -5;
+		//			weapon2.state = 1;
+		//			weapon2.facing = player.facing;
+		//			weapon2.charge = 0;
+		//		}
+		//	}
 
-			if (weapon2.state == 1)
-			{
-				weapon2.flyTimer -= 1;
-				weapon2.velosity.y += 0.5f; // 重力
-				if (weapon2.flyTimer <= 0)
-				{
-					weapon2.state = 0;
-					weapon2.flyTimer = weapon2.flyTime;
-				}
-			}
+		//	if (weapon2.state == 1)
+		//	{
+		//		weapon2.flyTimer -= 1;
+		//		weapon2.velosity.y += 0.5f; // 重力
+		//		if (weapon2.flyTimer <= 0)
+		//		{
+		//			weapon2.state = 0;
+		//			weapon2.flyTimer = weapon2.flyTime;
+		//		}
+		//	}
 
-			if (keys[DIK_L] && !preKeys[DIK_L])
-			{
-				if (weapon3.state == 0)
-				{
-					weapon3.position.x = player.position.x;
-					weapon3.position.y = player.position.y;
-					weapon3.velosity.x = 30.0f * player.facing;
-					weapon3.state = 1;
-					weapon3.facing = player.facing;
-				}
-			}
+		//	if (keys[DIK_L] && !preKeys[DIK_L])
+		//	{
+		//		if (weapon3.state == 0)
+		//		{
+		//			weapon3.position.x = player.position.x;
+		//			weapon3.position.y = player.position.y;
+		//			weapon3.velosity.x = 30.0f * player.facing;
+		//			weapon3.state = 1;
+		//			weapon3.facing = player.facing;
+		//		}
+		//	}
 
-			if (weapon3.state == 1)
-			{
-				weapon3.flyTimer -= 1;
-				weapon3.velosity.x -= weapon3.facing;
-				if (weapon3.velosity.x * weapon3.facing < 0)
-				{
-					weapon3.state = 2;
-				}
-			}
-			else if (weapon3.state == 2)
-			{
-				weapon3.flyTimer -= 1;
-				weapon3.velosity.x -= weapon3.facing;
-				if (weapon3.flyTimer <= 0)
-				{
-					weapon3.state = 0;
-					weapon3.flyTimer = weapon3.flyTime;
-				}
-			}
-		}
+		//	if (weapon3.state == 1)
+		//	{
+		//		weapon3.flyTimer -= 1;
+		//		weapon3.velosity.x -= weapon3.facing;
+		//		if (weapon3.velosity.x * weapon3.facing < 0)
+		//		{
+		//			weapon3.state = 2;
+		//		}
+		//	}
+		//	else if (weapon3.state == 2)
+		//	{
+		//		weapon3.flyTimer -= 1;
+		//		weapon3.velosity.x -= weapon3.facing;
+		//		if (weapon3.flyTimer <= 0)
+		//		{
+		//			weapon3.state = 0;
+		//			weapon3.flyTimer = weapon3.flyTime;
+		//		}
+		//	}
+		//}
 
 		/// 武器1(Sword)
 
-		if (player.weapon == 0)
+		if (weapon1.charge > 100)
 		{
-
-			if (weapon1.charge > 100)
+			weapon1.charge = 100;
+		}
+		if (!keys[DIK_J] && preKeys[DIK_J])
+		{
+			if (weapon1.state == 0)
 			{
-				weapon1.charge = 100;
-			}
-			if (!keys[DIK_J] && preKeys[DIK_J])
-			{
-				if (weapon1.state == 0)
-				{
-					weapon1.position.x = player.position.x;
-					weapon1.position.y = player.position.y;
-					weapon1.state = 1;
-					weapon1.facing = player.facing;
-					weapon1.charge = 0;
-				}
-			}
-
-			if (weapon1.state == 1)
-			{
-				weapon1.flyTimer -= 1;
-				if (weapon1.isHit)
-				{
-					
-				}
-
-				if (weapon1.flyTimer <= 0)
-				{
-					weapon1.state = 0;
-					weapon1.flyTimer = weapon1.flyTime;
-				}
-			}
-
-			if (keys[DIK_J])
-			{
-				weapon1.charge++;
-			}
-			else
-			{
+				weapon1.position.x = player.position.x + player.facing * 48;
+				weapon1.position.y = player.position.y;
+				weapon1.state = 1;
+				weapon1.facing = player.facing;
 				weapon1.charge = 0;
+				weapon1.hitReady = true;
 			}
 		}
 
-		/// 武器2(arrow)
-		
-		if (player.weapon == 1)
+		if (weapon1.state == 1)
 		{
-			
-			if (weapon2.charge > 100)
+			weapon1.flyTimer -= 1;
+			if (weapon1.isHit)//敵を命中したら
 			{
-				weapon2.charge = 100;
-			}
-			if (!keys[DIK_K] && preKeys[DIK_K])
-			{
-				if (weapon2.state == 0)
-				{
-					weapon2.position.x = player.position.x;
-					weapon2.position.y = player.position.y;
-					weapon2.velosity.x = (float)weapon2.charge * player.facing/2;
-					weapon2.velosity.y = -5;
-					weapon2.state = 1;
-					weapon2.facing = player.facing;
-					weapon2.charge = 0;
-				}
+				weapon1.hitReady = false;
 			}
 
-			if (weapon2.state == 1)
+			if (weapon1.flyTimer <= 0)
 			{
-				weapon2.flyTimer -= 1;
-				weapon2.velosity.y += 0.5f; // 重力
-				if (weapon2.flyTimer <= 0)
-				{
-					weapon2.state = 0;
-					weapon2.flyTimer = weapon2.flyTime;
-				}
+				weapon1.state = 0;
+				weapon1.flyTimer = weapon1.flyTime;
 			}
+		}
 
+		if (keys[DIK_J])
+		{
+			weapon1.charge++;
+		}
+		else
+		{
+			weapon1.charge = 0;
+		}
+
+		/// 武器2(arrow)
+
+		if (weapon2.charge > 100)
+		{
+			weapon2.charge = 100;
+		}
+		if (!keys[DIK_K] && preKeys[DIK_K])
+		{
+			if (weapon2.state == 0)
+			{
+				weapon2.position.x = player.position.x;
+				weapon2.position.y = player.position.y;
+				weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
+				weapon2.velosity.y = -5;
+				weapon2.state = 1;
+				weapon2.facing = player.facing;
+				weapon2.charge = 0;
+				weapon2.hitReady = true;
+			}
+		}
+
+		if (weapon2.state == 1)
+		{
+			weapon2.flyTimer -= 1;
+			weapon2.velosity.y += 0.5f; // 重力
+			if (weapon2.flyTimer <= 0)
+			{
+				weapon2.state = 0;
+				weapon2.flyTimer = weapon2.flyTime;
+			}
+			if (weapon2.isHit)//敵を命中したら
+			{
+				weapon2.hitReady = false;
+				weapon2.velosity.x = 0;
+				weapon2.velosity.y = 0;
+			}
 		}
 
 		if (weapon2.position.y > 700)
@@ -445,38 +450,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		/// 武器3(ブーメラン)
-		if (player.weapon == 2)
+		if (keys[DIK_L] && !preKeys[DIK_L])
 		{
-			if (keys[DIK_L] && !preKeys[DIK_L])
+			if (weapon3.state == 0)
 			{
-				if (weapon3.state == 0)
-				{
-					weapon3.position.x = player.position.x;
-					weapon3.position.y = player.position.y;
-					weapon3.velosity.x = 30.0f * player.facing;
-					weapon3.state = 1;
-					weapon3.facing = player.facing;
-				}
+				weapon3.position.x = player.position.x;
+				weapon3.position.y = player.position.y;
+				weapon3.velosity.x = 30.0f * player.facing;
+				weapon3.state = 1;
+				weapon3.facing = player.facing;
+				weapon3.hitReady = true;
 			}
+		}
 
-			if (weapon3.state == 1)
+		if (weapon3.state == 1)
+		{
+			weapon3.flyTimer -= 1;
+			weapon3.velosity.x -= weapon3.facing;
+			if (weapon3.velosity.x * weapon3.facing < 0)
 			{
-				weapon3.flyTimer -= 1;
-				weapon3.velosity.x -= weapon3.facing;
-				if (weapon3.velosity.x * weapon3.facing < 0)
-				{
-					weapon3.state = 2;
-				}
+				weapon3.state = 2;
+				weapon2.hitReady = true;
 			}
-			else if (weapon3.state == 2)
+			if (weapon3.isHit)
 			{
-				weapon3.flyTimer -= 1;
-				weapon3.velosity.x -= weapon3.facing;
-				if (weapon3.flyTimer <= 0)
-				{
-					weapon3.state = 0;
-					weapon3.flyTimer = weapon3.flyTime;
-				}
+				weapon3.hitReady = false;
+			}
+		}
+		else if (weapon3.state == 2)
+		{
+			weapon3.flyTimer -= 1;
+			weapon3.velosity.x -= weapon3.facing;
+			if (weapon3.flyTimer <= 0)
+			{
+				weapon3.state = 0;
+				weapon3.flyTimer = weapon3.flyTime;
+			}
+			if (weapon3.isHit)
+			{
+				weapon3.hitReady = false;
+			}
+			if (player.isHit)
+			{
+				weapon3.state = 0;
+				weapon3.flyTimer = weapon3.flyTime;
 			}
 		}
 		weapon3.position.x += weapon3.velosity.x;
@@ -778,7 +795,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		Novice::DrawBox(static_cast<int>( camera.x), 0, 1280, 720, 0.0f, 0x87CEEBFF, kFillModeSolid); // sky
+		Novice::DrawSprite(0,0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
+		//UI
+		//playerHP Bar
+		int playerHp = 80;  //max=100
+		Novice::DrawBox(83, 99, playerHp * 330 / 100, 26, 0.0f, RED, kFillModeSolid);
 
+		//EnemyHP Bar
+		int enemyHp = 80;   //max=100
+		Novice::DrawBox(211, 19, enemyHp *858 / 100, 26, 0.0f, RED, kFillModeSolid);
+
+		//weapon1 CD Bar
+		if (weapon1.flyTimer >= weapon1.flyTime)
+		{
+			Novice::DrawBox(106, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
+		}
+		else
+		{
+			Novice::DrawBox(106, 201, 27, (weapon1.flyTime-weapon1.flyTimer) * 84 / weapon1.flyTime, 0.0f, RED, kFillModeSolid);
+		}
+		Novice::DrawBox(126, 201, 7, weapon1.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
+
+		//weapon2 CD Bar
+		if (weapon2.flyTimer >= weapon2.flyTime)
+		{
+			Novice::DrawBox(186, 201, 28, 84, 0.0f, GREEN, kFillModeSolid);
+		}
+		else
+		{
+			Novice::DrawBox(186, 201, 28, (weapon2.flyTime - weapon2.flyTimer) * 84 / weapon2.flyTime, 0.0f, RED, kFillModeSolid);
+		}
+		Novice::DrawBox(206, 201, 8, weapon2.charge* 84 /101, 0.0f, BLUE, kFillModeSolid);
+
+		//weapon3 CD Bar
+		if (weapon3.flyTimer >= weapon3.flyTime)
+		{
+			Novice::DrawBox(266, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
+		}
+		else
+		{
+			Novice::DrawBox(266, 201, 27, (weapon3.flyTime - weapon3.flyTimer) * 84 / weapon3.flyTime, 0.0f, RED, kFillModeSolid);
+		}
+
+
+		//player・enemy・bullet・weapon描画
 		if (player.isHit)
 		{
 			Novice::DrawEllipse(static_cast<int>(player.position.x+ camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);

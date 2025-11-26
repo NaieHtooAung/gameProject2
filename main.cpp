@@ -16,7 +16,7 @@ typedef struct Player {
 	Vector2 position;
 	float radius;
 	float speed;
-
+	int health;
 	int dashTimer;
 
 	int dashCoolTimer;
@@ -35,6 +35,7 @@ typedef struct Player {
 typedef struct Enemy {
 	Vector2 position;
 	float radius;
+	int health;
 	int attackPattern;
 	int patternTimer;
 	int patternCD;
@@ -62,8 +63,11 @@ typedef struct Bullet {
 	float radius;
 	float speed;
 	bool isShot;
+	bool isHit;
 	float velX;
 	float velY;
+	float velSaveX;
+	float velSaveY;
 } Bullet;
 
 typedef struct SkyBall {
@@ -112,6 +116,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	player.position.x = 320.0f;
 	player.position.y = 640.0f;
 	player.radius = 32.0f;
+	player.health = 100;
 	player.speed = 5.0f;
 	player.weapon = 3; // 0:剣 1:弓 2:標
 	player.facing = 1;
@@ -129,6 +134,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.position.x = 840.0f;
 	enemy.position.y = 640.0f;
 	enemy.radius = 64.0f;
+	enemy.health = 100;
 	enemy.speed = 3.0f;
 	enemy.speedInitial = enemy.speed;  // store initial
 	enemy.patternTimer = 180;
@@ -169,7 +175,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		sb[i].speed = 10;
 		sb[i].isFalling = false;
 	}
-	
+
 	weapon1.flyTime = 15;
 	weapon1.flyTimer = 15;
 	weapon2.flyTime = 60;
@@ -389,7 +395,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		if (!keys[DIK_J] && preKeys[DIK_J])
 		{
-			player.weapon= 0;
+			player.weapon = 0;
 			if (weapon1.state == 0)
 			{
 				weapon1.position.x = player.position.x + player.facing * 48;
@@ -587,6 +593,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				else {
 					enemy.direction = -1;
 				}
+				
 				// Start charging
 				enemy.isCharging = true;
 				enemy.chargeTimer = 60;     // adjust as desired
@@ -614,10 +621,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						enemy.dashDirection = -1;
 					}
 				}
+				
 			}
 			else if (enemy.isDash) {
 				enemy.dashCoolTimer--;
+				float ax = player.position.x - enemy.position.x;
+				float dy = player.position.y - enemy.position.y;
+				float distSq = ax * ax + dy * dy;
+				float sumR = player.radius + enemy.radius;
+				if (distSq <= sumR * sumR) {
+					player.health -= 5;
 
+				}
 				// Compute direction vector toward the locked target
 				//float dx = enemy.dashTargetPosition.x - enemy.position.x;
 				//float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
@@ -630,6 +645,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				// If you only want horizontal (X axis) dash and maintain ground Y:
 				enemy.position.x += enemy.dashDirection * enemy.dashSpeed;
 				enemy.position.y = 640.0f;  // keeps Y fixed
+
 
 				enemy.dashTimer--;
 
@@ -660,6 +676,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 			}
 
+		
+			
 			// Reset cooldown if needed
 			if (enemy.dashCoolTimer <= 0) {
 				enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
@@ -683,59 +701,74 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				shotTimer--;
 				if (shotTimer <= 0) {
 					// Find an inactive bullet in your bullet array
+					// --- When you shoot a bullet (spawn / fire) ---
 					for (int i = 0; i < 3; i++) {
 						if (!bullet[i].isShot) {
-							// Compute direction to player
+							// initialize bullet for new shot
+							bullet[i].isShot = true;
+							bullet[i].isHit = false;                 // reset hit flag
+							bullet[i].position = enemy.position;      // spawn at enemy (or shooter) pos
+							// compute normalized direction to player
 							float dx = player.position.x - enemy.position.x;
 							float dy = player.position.y - enemy.position.y;
 							float len = sqrtf(dx * dx + dy * dy);
 							if (len != 0.0f) {
-								dx /= len;
-								dy /= len;
+								dx /= len; dy /= len;
 							}
-
-							// Activate bullet
-							bullet[i].isShot = true;
-							bullet[i].position = enemy.position;
-							// Assign velocity
-							bullet[i].speed = 10.0f; // or whatever
-							// We need a velocity vector, so add that to the bullet struct
-							// (modify Bullet struct to have vel.x and vel.y)
+							// set velocity
 							bullet[i].velX = dx * bullet[i].speed;
 							bullet[i].velY = dy * bullet[i].speed;
-
-							break; // shoot only one bullet now
+							bullet[i].velSaveX = bullet[i].velX;
+							bullet[i].velSaveY = bullet[i].velY;
+							break;  // spawn one bullet per call
 						}
 					}
 
+					
 					shotCount--;
 					shotTimer = delayBetweenShots;
-				}
-			}
-
-			// Update bullets
-			for (int i = 0; i < 3; i++) {
-				if (bullet[i].isShot) {
-					bullet[i].position.x += bullet[i].velX;
-					bullet[i].position.y += bullet[i].velY;
-					// If bullet goes off screen, reset
-					if (bullet[i].position.x < 0 || bullet[i].position.x > 1280 ||
-						bullet[i].position.y < 0 || bullet[i].position.y > 720) {
-						bullet[i].isShot = false;
-
+					if (shotCount <= 0)
+					{
+						enemy.attackPattern = 0;
+						enemy.speed = enemy.speedInitial;
+						shotCount = 12;
 					}
+				}
 
-				}
-				if (shotCount <= 0)
-				{
-					enemy.attackPattern = 0;
-					enemy.speed = enemy.speedInitial;
-					shotCount = 12;
-				}
 			}
-			Novice::ScreenPrintf(0, 650, "enemy dashCount : %d", shotCount);
-
 		}
+		// --- Bullet‐Player collision check ---
+			// --- Each frame: update all bullets (movement + collision + deactivate) ---
+		for (int i = 0; i < 3; i++) {
+			if (!bullet[i].isShot) continue;
+
+			// Move bullet
+			bullet[i].position.x +=bullet[i].velSaveX;
+			bullet[i].position.y += bullet[i].velSaveY;
+			
+			// Optional: off-screen check → deactivate
+			if (bullet[i].position.x < 0 || bullet[i].position.x > 1280 ||
+				bullet[i].position.y < 0 || bullet[i].position.y > 720) {
+				bullet[i].isShot = false;
+				continue;
+			}
+
+			// Collision check: player vs bullet (circle-circle)
+			float dx = player.position.x - bullet[i].position.x;
+			float dy = player.position.y - bullet[i].position.y;
+			float distSq = dx * dx + dy * dy;
+			float radiusSum = player.radius + bullet[i].radius;
+
+			if (distSq <= radiusSum * radiusSum) {
+				// Hit detected — apply damage
+				player.health -= 5;
+				if (player.health < 0) player.health = 0;
+
+				// Deactivate bullet so it doesn’t hit again
+				bullet[i].isShot = false;
+			}
+		}
+
 		if (enemy.attackPattern == 3) {
 			for (int i = 0; i < 3; i++) {
 				// If this ball is not currently falling, start it
@@ -767,13 +800,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					player.isDamage = true;
 					if (player.isDamage)
 					{
+						player.health -= 10;
 						// Immediately hide/disable this skyball
 						sb[i].isFalling = false;
 						sb[i].position.y = -100.0f;
 						sb[i].position.x = (float)(rand() % 1230 + 50);
 						player.isDamage = false;
 					}
-				
+
 					// **Process damage logic here** (e.g., reduce player HP, play effect)
 
 				}
@@ -786,36 +820,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				sb[i].position.y += sb[i].speed;
 			}
-			
+
 		}
 		
-		if (enemy.attackPattern == 0)
-		{
-			for (int i = 0; i < 3; i++)
-			{
-				bullet[i].position.x += bullet[i].velX;
-				bullet[i].position.y += bullet[i].velY;
-			}
-		}
-		// --- Bullet‐Player collision check ---
-		for (int j = 0; j < 3; j++)
-		{
-			float bx = player.position.x - bullet[j].position.x;
-			float by = player.position.y - bullet[j].position.y;
-			float distSqB = bx * bx + by * by;
-			float sumRB = player.radius + bullet[j].radius;
-			if (distSqB <= sumRB * sumRB) {
-				player.isHit = true;
-				bullet[j].isShot = false;
-			}
-			else
-			{
-				player.isHit = false;
-			}
-		}
-
+		player.position.x += player.velocity.x;
 		// --- Collision check every frame ---
-			// Reset hit state
+		// Reset hit state
 		player.isHit = false;
 
 		float ax = player.position.x - enemy.position.x;
@@ -824,6 +834,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		float sumR = player.radius + enemy.radius;
 		if (distSq <= sumR * sumR) {
 			player.isHit = true;
+
+		}
+		else
+		{
+			player.isHit = false;
 		}
 
 		/*float bx = enemy.dashTargetPosition.x - enemy.position.x;
@@ -852,7 +867,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 
-		player.position.x += player.velocity.x;
 
 
 		//camera
@@ -885,12 +899,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Novice::DrawSprite(0, 0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
 		//UI
 		//playerHP Bar
-		int playerHp = 80;  //max=100
-		Novice::DrawBox(83, 99, playerHp * 330 / 100, 26, 0.0f, RED, kFillModeSolid);
+		//int playerHp = 80;  //max=100
+		Novice::DrawBox(83, 99, player.health * 330 / 100, 26, 0.0f, RED, kFillModeSolid);
 
 		//EnemyHP Bar
-		int enemyHp = 80;   //max=100
-		Novice::DrawBox(211, 19, enemyHp * 858 / 100, 26, 0.0f, RED, kFillModeSolid);
+		//enemy.health = 80;   //max=100
+		Novice::DrawBox(211, 19, enemy.health * 858 / 100, 26, 0.0f, RED, kFillModeSolid);
 
 		//weapon1 CD Bar
 		if (weapon1.flyTimer >= weapon1.flyTime)
@@ -935,7 +949,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
 		}
 
-		Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32),playerWalkSprite.frame,0, 80, 80,
+		Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerWalkSprite.frame, 0, 80, 80,
 			playerWalkTexture,
 			0.5f, 1.0f, 0.0f, WHITE);
 		if (player.weapon == 0)
@@ -944,7 +958,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				playerW1Texture,
 				0.5f, 1.0f, 0.0f, WHITE);
 		}
-		else if(player.weapon == 1)
+		else if (player.weapon == 1)
 		{
 			Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerW2Sprite.frame, 0, 80, 80,
 				playerW2Texture,
@@ -1003,6 +1017,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 210, "w3 timer : %d", weapon3.flyTimer);
 			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x, player.position.y);
 			Novice::ScreenPrintf(0, 430, "playerV x : %0.2f  y : %0.2f", player.velocity.x, player.velocity.y);
+			for (int i = 0; i < 3; i++)
+			{
+				Novice::ScreenPrintf(0, 480 + i * 20, "HIT bullet %d! health=%d", i, player.health);
+
+			}
 
 		}
 		///

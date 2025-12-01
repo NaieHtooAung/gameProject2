@@ -228,7 +228,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ダッシュ処理
 		if (keys[DIK_LSHIFT] && !preKeys[DIK_LSHIFT])
 		{
-
+			if (player.dashTimer == player.dashTime)
+			{
+				player.velocity.x = 0;
+			}
 			player.isDash = true;
 		}
 		if (player.isDash)
@@ -402,17 +405,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				weapon1.position.y = player.position.y;
 				weapon1.state = 1;
 				weapon1.facing = player.facing;
-				weapon1.charge = 0;
 				weapon1.hitReady = true;
 			}
 		}
 
-		if (weapon1.state == 1)
+		if (weapon1.state == 0)
+		{
+			if (keys[DIK_J])
+			{
+				weapon1.charge++;
+			}
+			else
+			{
+				weapon1.charge = 0;
+			}
+		}
+		else if (weapon1.state == 1)
 		{
 			weapon1.flyTimer -= 1;
 			if (weapon1.isHit)//敵を命中したら
 			{
 				weapon1.hitReady = false;
+				enemy.health -= 2 + weapon1.charge/10;
 			}
 
 			if (weapon1.flyTimer <= 0)
@@ -420,15 +434,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				weapon1.state = 0;
 				weapon1.flyTimer = weapon1.flyTime;
 			}
+			
 		}
-
-		if (keys[DIK_J])
+		
+		//W1当たり判定
+		float w1eDistX = enemy.position.x - weapon1.position.x;
+		float w1eDistY = enemy.position.y - weapon1.position.y;
+		float w1eDistSq = w1eDistX * w1eDistX + w1eDistY * w1eDistY;
+		float w1eR = enemy.radius + 16.0f; // 武器の半径を16と仮定
+		if (w1eDistSq <= w1eR * w1eR && weapon1.hitReady)
 		{
-			weapon1.charge++;
+			weapon1.isHit = 1;
 		}
 		else
 		{
-			weapon1.charge = 0;
+			weapon1.isHit = 0;
 		}
 
 		/// 武器2(arrow)
@@ -448,11 +468,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				weapon2.velosity.y = -5;
 				weapon2.state = 1;
 				weapon2.facing = player.facing;
-				weapon2.charge = 0;
 				weapon2.hitReady = true;
 			}
 		}
 
+		if (weapon2.state == 0)
+		{
+			if (keys[DIK_K])
+			{
+				weapon2.charge++;
+			}
+			else
+			{
+				weapon2.charge = 0;
+			}
+		}
 		if (weapon2.state == 1)
 		{
 			weapon2.flyTimer -= 1;
@@ -467,6 +497,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				weapon2.hitReady = false;
 				weapon2.velosity.x = 0;
 				weapon2.velosity.y = 0;
+				enemy.health -= 5 + weapon2.charge / 10;
 			}
 		}
 
@@ -479,13 +510,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		weapon2.position.x += weapon2.velosity.x;
 		weapon2.position.y += weapon2.velosity.y;
 
-		if (keys[DIK_K])
+		//w2当たり判定
+		float w2eDistX = enemy.position.x - weapon2.position.x;
+		float w2eDistY = enemy.position.y - weapon2.position.y;
+		float w2eDistSq = w2eDistX * w2eDistX + w2eDistY * w2eDistY;
+		float w2eR = enemy.radius + 10.0f; // 武器の半径を10と仮定
+		if (w2eDistSq <= w2eR * w2eR && weapon2.hitReady)
 		{
-			weapon2.charge++;
+			weapon2.isHit = 1;
 		}
 		else
 		{
-			weapon2.charge = 0;
+			weapon2.isHit = 0;
 		}
 
 		/// 武器3(ブーメラン)
@@ -503,19 +539,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 		}
 
-		if (weapon3.state == 1)
+		if (weapon3.state == 0)
+		{
+			//待機中は特に処理なし
+		}
+		else if (weapon3.state == 1)
 		{
 			weapon3.flyTimer -= 1;
 			weapon3.velosity.x -= weapon3.facing;
 			if (weapon3.velosity.x * weapon3.facing < 0)
 			{
 				weapon3.state = 2;
-				weapon2.hitReady = true;
+				weapon3.hitReady = true;
 			}
-			if (weapon3.isHit)
+			if (weapon3.isHit )
 			{
 				weapon3.hitReady = false;
+				enemy.health -= 5 ;
 			}
+			
 		}
 		else if (weapon3.state == 2)
 		{
@@ -529,17 +571,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (weapon3.isHit)
 			{
 				weapon3.hitReady = false;
+				enemy.health -= 5 ;
 			}
-			if (player.isHit)
-			{
-				weapon3.state = 0;
-				weapon3.flyTimer = weapon3.flyTime;
-			}
+			
 		}
 		weapon3.position.x += weapon3.velosity.x;
 		weapon3.position.y += weapon3.velosity.y;
 
+		//w3当たり判定
+		float w3eDistX = enemy.position.x - weapon3.position.x;
+		float w3eDistY = enemy.position.y - weapon3.position.y;
+		float w3eDistSq = w3eDistX * w3eDistX + w3eDistY * w3eDistY;
+		float w3eR = enemy.radius + 10.0f; // 武器の半径を10と仮定
+		if (w3eDistSq <= w3eR * w3eR && weapon3.hitReady)
+		{
+			weapon3.isHit = 1;
+		}
+		else
+		{
+			weapon3.isHit = 0;
+		}
 
+		float w3pDistX = player.position.x - weapon3.position.x;
+		float w3pDistY = player.position.y - weapon3.position.y;
+		float w3pDistSq = w3pDistX * w3pDistX + w3pDistY * w3pDistY;
+		float w3pR = player.radius + 10.0f; // 武器の半径を10と仮定
+		if (w3pDistSq <= w3pR * w3pR && weapon3.state == 2)
+		{
+			weapon3.state = 0;
+			weapon3.flyTimer = weapon3.flyTime;
+			weapon3.position.y = -100.0f;
+		}
+		
 
 		/// 敵の移動
 		enemy.position.x += enemy.speed;

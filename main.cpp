@@ -103,6 +103,8 @@ Sprite playerWalkSprite;
 Sprite playerW1Sprite;
 Sprite playerW2Sprite;
 Sprite playerW3Sprite;
+Sprite playerFSprite;
+Sprite enemySprite;
 
 int backEndData = true;
 
@@ -118,7 +120,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	player.radius = 32.0f;
 	player.health = 100;
 	player.speed = 5.0f;
-	player.weapon = 3; // 0:剣 1:弓 2:標
+	player.weapon = -1; // 0:剣 1:弓 2:標
 	player.facing = 1;
 	player.dashCoolTimer = 60;
 	player.dashTimer = 15;
@@ -184,11 +186,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	weapon3.flyTimer = 90;
 
 	//imageResourceLoad();
-	int playerWalkTexture = Novice::LoadTexture("./Resource/image/playerWalk.png");
+	/*int playerWalkTexture = Novice::LoadTexture("./Resource/image/playerWalk.png");
 	int playerW1Texture = Novice::LoadTexture("./Resource/image/playerW1.png");
 	int playerW2Texture = Novice::LoadTexture("./Resource/image/playerW2.png");
-	int playerW3Texture = Novice::LoadTexture("./Resource/image/playerW3.png");
-	//int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
+	int playerW3Texture = Novice::LoadTexture("./Resource/image/playerW3.png");*/
+	int playerFTexture = Novice::LoadTexture("./Resource/image/playerF.png");
+	int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
 
 	// キー入力結果を受け取る箱
@@ -426,7 +429,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (weapon1.isHit)//敵を命中したら
 			{
 				weapon1.hitReady = false;
-				enemy.health -= 2 + weapon1.charge/10;
+				enemy.health -= 2 + weapon1.charge/20;
 			}
 
 			if (weapon1.flyTimer <= 0)
@@ -497,7 +500,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				weapon2.hitReady = false;
 				weapon2.velosity.x = 0;
 				weapon2.velosity.y = 0;
-				enemy.health -= 5 + weapon2.charge / 10;
+				enemy.health -= 2 + weapon2.charge / 20;
 			}
 		}
 
@@ -605,6 +608,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		
 
 		/// 敵の移動
+		enemySprite.frame = 0;
 		enemy.position.x += enemy.speed;
 		if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
 		{
@@ -667,6 +671,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				enemy.chargeTimer--;
 				enemy.speed = 0.0f;           // stand still while charging
 				enemy.position.y = 640.0f;    // maintain ground Y
+				enemySprite.frame = 1;
 
 				if (enemy.chargeTimer <= 0) {
 					// Charge ends → start dash
@@ -731,6 +736,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						enemy.attackPattern = 0;  // or next pattern
 					}
 				}
+				enemySprite.frame = 2;
 			}
 			if (enemy.isDash)
 			{
@@ -810,6 +816,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 
 			}
+			enemySprite.frame = 3;
 		}
 		// --- Bullet‐Player collision check ---
 			// --- Each frame: update all bullets (movement + collision + deactivate) ---
@@ -886,6 +893,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 				}
 			}
+			enemySprite.frame = 3;
 		}
 
 		for (int i = 0; i < 3; i++)
@@ -1023,7 +1031,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
 		}
 
-		Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerWalkSprite.frame, 0, 80, 80,
+		/*Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerWalkSprite.frame, 0, 80, 80,
 			playerWalkTexture,
 			0.5f, 1.0f, 0.0f, WHITE);
 		if (player.weapon == 0)
@@ -1043,7 +1051,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerW3Sprite.frame, 0, 80, 80,
 				playerW3Texture,
 				0.5f, 1.0f, 0.0f, WHITE);
+		}*/
+
+		if (player.facing == 1)
+		{
+			playerFSprite.frame = (player.weapon+1) * 2 ;
 		}
+		else
+		{
+			playerFSprite.frame = (player.weapon + 1) *2 + 1;
+		}
+		Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame*96, 0, 96, 96,
+			playerFTexture,
+			0.125f, 1.0f, 0.0f, WHITE);
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -1066,7 +1086,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			}
 		}
-		Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
+		//Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
+		if ((weapon1.isHit&& weapon1.hitReady) || (weapon2.isHit && weapon2.hitReady) || (weapon3.isHit && weapon3.hitReady))
+		{
+			Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, BLACK, kFillModeSolid);
+		}
+		else
+		{
+			Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
+		}
+		Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 48 + camera.x), static_cast<int>(enemy.position.y - 32), enemySprite.frame * 128, 0, 128, 128,
+			enemyTexture,
+			0.25f, 1.0f, 0.0f, WHITE);
 		Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
 		Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
 		Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);

@@ -110,6 +110,12 @@ Sprite enemySprite;
 
 int backEndData = true;
 
+//BIG TIMER
+clock_t start, end;
+double bigTimer = 0;
+int bigTimerPrint = 0;
+int bigTimerControll = 0;
+
 int gamePhase = 0; //0=title  1=tutorial  2=game  3=result  
 int inPhaseControll = 0; //0=intro  1=setup  2=main  3=outro
 
@@ -197,6 +203,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int playerFTexture = Novice::LoadTexture("./Resource/image/playerF.png");
 	int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
+	int titleBGTexture = Novice::LoadTexture("./Resource/image/title.png");
+	int tutorialBGTexture = Novice::LoadTexture("./Resource/image/tutorial.png");
+	int resultBGTexture = Novice::LoadTexture("./Resource/image/result.png");
+
+
+	//數字圖像讀取
+	int numberGraphHandles[11];
+	numberGraphHandles[0] = Novice::LoadTexture("./Resource/image/number/number0.png");
+	numberGraphHandles[1] = Novice::LoadTexture("./Resource/image/number/number1.png");
+	numberGraphHandles[2] = Novice::LoadTexture("./Resource/image/number/number2.png");
+	numberGraphHandles[3] = Novice::LoadTexture("./Resource/image/number/number3.png");
+	numberGraphHandles[4] = Novice::LoadTexture("./Resource/image/number/number4.png");
+	numberGraphHandles[5] = Novice::LoadTexture("./Resource/image/number/number5.png");
+	numberGraphHandles[6] = Novice::LoadTexture("./Resource/image/number/number6.png");
+	numberGraphHandles[7] = Novice::LoadTexture("./Resource/image/number/number7.png");
+	numberGraphHandles[8] = Novice::LoadTexture("./Resource/image/number/number8.png");
+	numberGraphHandles[9] = Novice::LoadTexture("./Resource/image/number/number9.png");
+	//numberGraphHandles[10] = Novice::LoadTexture("./Resources/images/number/numberx.png");
+	int bigTimerX;
+	int bigTimerArray[6];
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -280,6 +306,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				//setup
 				inPhaseControll = 2;
+				start = clock();
 			}
 			else if (inPhaseControll == 2)
 			{
@@ -984,6 +1011,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if(player.health<=0 || enemy.health<=0)
 				{
 					inPhaseControll = 3;
+					end = clock();
+					bigTimer = end - start;
+					bigTimerPrint = static_cast<int>(bigTimer);
+					bigTimerX = bigTimerPrint;
+					bigTimerArray[0] = bigTimerX / 100000;
+					bigTimerX = bigTimerPrint % 100000;
+					bigTimerArray[1] = bigTimerX / 10000;
+					bigTimerX = bigTimerPrint % 10000;
+					bigTimerArray[2] = bigTimerX / 1000;
+					bigTimerX = bigTimerPrint % 1000;
+					bigTimerArray[3] = bigTimerX / 100;
+					bigTimerX = bigTimerPrint % 100;
+					bigTimerArray[4] = bigTimerX / 10;
+					bigTimerX = bigTimerPrint % 10;
+					bigTimerArray[5] = bigTimerX;
 				}
 
 			}
@@ -1052,6 +1094,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				
 			}
+			Novice::DrawSprite(0, 0, titleBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 		}
 		else if (gamePhase == 1)
 		{
@@ -1071,6 +1114,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 
 			}
+			Novice::DrawSprite(0, 0, tutorialBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 		}
 		else if (gamePhase == 2)
 		{
@@ -1161,6 +1205,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				{
 					Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, RED, kFillModeSolid);
 				}
+				player.isDamage = false;
 				for (int i = 0; i < 3; i++)
 				{
 					if (bullet[i].isShot)
@@ -1194,6 +1239,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		else if (gamePhase == 3)
 		{
+			Novice::DrawSprite(0, 0, resultBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 			if (inPhaseControll == 0)
 			{
 
@@ -1210,6 +1256,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 
 			}
+			
+			if (bigTimerArray[0] != 0)
+			{
+				Novice::DrawSprite(
+					836, 620, numberGraphHandles[bigTimerArray[0]],
+					1.0f, 1.0f, 0.0, WHITE
+				);
+			}
+			Novice::DrawSprite(
+				872, 620, numberGraphHandles[bigTimerArray[1]],
+				1.0f, 1.0f, 0.0, WHITE
+			);
+			Novice::DrawSprite(
+				918, 620, numberGraphHandles[bigTimerArray[2]],
+				1.0f, 1.0f, 0.0, WHITE
+			);
+			Novice::DrawSprite(
+				990, 620, numberGraphHandles[bigTimerArray[3]],
+				1.0f, 1.0f, 0.0, WHITE
+			);
+			Novice::DrawSprite(
+				1036, 620, numberGraphHandles[bigTimerArray[4]],
+				1.0f, 1.0f, 0.0, WHITE
+			);
 		}
 
 
@@ -1241,6 +1311,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				Novice::ScreenPrintf(0, 480 + i * 20, "HIT bullet %d! health=%d", i, player.health);
 
 			}
+			
+			Novice::ScreenPrintf(0, 600, "BigTimer%d", bigTimerPrint);
 
 		}
 		///

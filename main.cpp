@@ -173,7 +173,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{
 		bullet[i].position.x = -100.0f;
 		bullet[i].position.y = -100.0f;
-		bullet[i].radius = 16.0f;
+		bullet[i].radius = 32.0f;
 		bullet[i].speed = 10.0f;
 		bullet[i].isShot = false;
 
@@ -183,7 +183,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{
 		sb[i].position.x = rand() % 1230 + 50.0f;
 		sb[i].position.y = -100.0f;
-		sb[i].radius = 50.0f;
+		sb[i].radius = 64.0f;
 		sb[i].speed = 10;
 		sb[i].isFalling = false;
 	}
@@ -206,6 +206,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int titleBGTexture = Novice::LoadTexture("./Resource/image/title.png");
 	int tutorialBGTexture = Novice::LoadTexture("./Resource/image/tutorial.png");
 	int resultBGTexture = Novice::LoadTexture("./Resource/image/result.png");
+	int enemyAttackP2 = Novice::LoadTexture("./Resource/image/enemyAttackBall.png");
+	int enemyAttackP3 = Novice::LoadTexture("./Resource/image/spaceRock.png");
 
 
 	//數字圖像讀取
@@ -862,37 +864,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 							sb[i].position.x = (float)(rand() % 1230 + 50);
 						}
 
-						// Collision with player
-						float dx = player.position.x - sb[i].position.x;
-						float dy = player.position.y - sb[i].position.y;
-						float distance = sqrtf(dx * dx + dy * dy);
-						float combinedRadius = player.radius + sb[i].radius;
-						if (distance < combinedRadius) {
-							// Hit detected
-							player.isDamage = true;
-							if (player.isDamage)
-							{
-								player.health -= 10;
-								// Immediately hide/disable this skyball
-								sb[i].isFalling = false;
-								sb[i].position.y = -100.0f;
-								sb[i].position.x = (float)(rand() % 1230 + 50);
-								player.isDamage = false;
-							}
-
-							// **Process damage logic here** (e.g., reduce player HP, play effect)
-
-						}
-					}
-					enemySprite.frame = 3;
-				}
-
-				for (int i = 0; i < 3; i++)
+				
+			}
+		}
+		for (int j = 0; j < 3; j++)
+		{
+			// Collision with player
+			float dx = player.position.x - sb[j].position.x;
+			float dy = player.position.y - sb[j].position.y;
+			float distance = sqrtf(dx * dx + dy * dy);
+			float combinedRadius = player.radius + sb[j].radius;
+			if (distance < combinedRadius) {
+				// Hit detected
+				player.isDamage = true;
+				if (player.isDamage)
 				{
-					if (sb[i].isFalling && enemy.attackPattern != 3)
-					{
-						sb[i].position.y += sb[i].speed;
-					}
+					player.health -= 10;
+					// Immediately hide/disable this skyball
+					sb[j].isFalling = false;
+					sb[j].position.y = -100.0f;
+					sb[j].position.x = (float)(rand() % 1230 + 50);
+					player.isDamage = false;
+				}
+			}
+			enemySprite.frame = 3;
+		}
+	
+		for (int i = 0; i < 3; i++)
+		{
+			if (sb[i].isFalling && enemy.attackPattern != 3)
+			{
+				sb[i].position.y += sb[i].speed;
+			}
 
 				}
 
@@ -1194,46 +1197,44 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					playerFTexture,
 					0.125f, 1.0f, 0.0f, WHITE);
 
-				for (int i = 0; i < 3; i++)
-				{
-					if (sb[i].isFalling)
-					{
-						Novice::DrawEllipse(static_cast<int>(sb[i].position.x + camera.x), static_cast<int>(sb[i].position.y), (int)sb[i].radius, (int)sb[i].radius, 0.0f, 0x0000FFFF, kFillModeSolid);
-					}
-				}
-				if (player.isDamage)
-				{
-					Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, RED, kFillModeSolid);
-				}
-				player.isDamage = false;
-				for (int i = 0; i < 3; i++)
-				{
-					if (bullet[i].isShot)
-					{
-
-						Novice::DrawEllipse((int)(bullet[i].position.x + camera.x), (int)bullet[i].position.y, (int)bullet[i].radius, (int)bullet[i].radius, 0.0f, 0xffffffff, kFillModeSolid);
-
-
-					}
-				}
-				//Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
-				if ((weapon1.isHit && weapon1.hitReady) || (weapon2.isHit && weapon2.hitReady) || (weapon3.isHit && weapon3.hitReady))
-				{
-					Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, BLACK, kFillModeSolid);
-				}
-				else
-				{
-					Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
-				}
-				Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 48 + camera.x), static_cast<int>(enemy.position.y - 32), enemySprite.frame * 128, 0, 128, 128,
-					enemyTexture,
-					0.25f, 1.0f, 0.0f, WHITE);
-				Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
-				Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
-				Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
-			}
-			else if (inPhaseControll == 3)
+		for (int i = 0; i < 3; i++)
+		{
+			if (sb[i].isFalling)
 			{
+				Novice::DrawSprite((static_cast<int>(sb[i].position.x + camera.x) - 16), (static_cast<int>(sb[i].position.y) - 16),
+					enemyAttackP3,
+					2.0f, 2.0f, 0.0f, WHITE);
+			}
+		}
+		if (player.isDamage)
+		{
+			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, RED, kFillModeSolid);
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			if (bullet[i].isShot)
+			{
+
+				Novice::DrawSprite(static_cast<int>(bullet[i].position.x + camera.x) - 16, static_cast<int>(bullet[i].position.y) - 16,
+					enemyAttackP2,
+					1.0f, 1.0f, 0.0f, WHITE);
+			}
+		}
+		//Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
+		if ((weapon1.isHit&& weapon1.hitReady) || (weapon2.isHit && weapon2.hitReady) || (weapon3.isHit && weapon3.hitReady))
+		{
+			Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, BLACK, kFillModeSolid);
+		}
+		else
+		{
+			Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
+		}
+		Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 48 + camera.x), static_cast<int>(enemy.position.y - 32), enemySprite.frame * 128, 0, 128, 128,
+			enemyTexture,
+			0.25f, 1.0f, 0.0f, WHITE);
+		Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
+		Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
 
 			}
 		}

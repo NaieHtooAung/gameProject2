@@ -56,6 +56,8 @@ typedef struct Enemy {
 	bool isDash;
 
 	Vector2 dashTargetPosition;
+	float smashCharge = 0.0f;
+	float smashCooldown = 0.0f;
 } Enemy;
 
 typedef struct Bullet {
@@ -930,6 +932,66 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 
+		static float smashFlashTimer = 0.0f;
+		// タイマー更新
+		smashFlashTimer += 1.0f;
+		if (smashFlashTimer >= 20.0f) smashFlashTimer = 0.0f;
+
+		// 剣が敵に当たったらゲージ増加
+		static bool wasHitLastFrame = false;
+
+		if (weapon1.isHit && weapon1.hitReady && !wasHitLastFrame) {
+			enemy.smashCharge += 20.0f;
+			if (enemy.smashCharge >= 200.0f) {   
+				enemy.smashCharge = 200.0f;  
+			}
+			weapon1.hitReady = false;
+		}
+		wasHitLastFrame = weapon1.isHit;
+
+	
+		// 攻撃してないときは少しずつ減少
+		if (!(keys[DIK_J] && weapon1.state == 1 && weapon1.hitReady)) {
+			if (enemy.smashCharge > 0.0f) {  
+				enemy.smashCharge -= 0.05f;
+				if (enemy.smashCharge < 0.0f) enemy.smashCharge = 0.0f;
+			}
+		}
+
+		// クールダウン減少
+		if (enemy.smashCooldown > 0.0f) {
+			enemy.smashCooldown -= 1.0f;
+		}
+
+		if (enemy.smashCharge >= 199.9f && enemy.smashCooldown <= 0.0f) {  
+			enemy.smashCharge = 0.0f;
+			enemy.smashCooldown = 150.0f;
+		}
+		// スマッシュ中は敵の判定巨大化
+		float currentEnemyRadius = enemy.radius;
+		if (enemy.smashCooldown > 90.0f) {
+			currentEnemyRadius = 140.0f;
+		}
+
+		// 当たり判定
+		float dx_hit = player.position.x - enemy.position.x;
+		float dy_hit = player.position.y - enemy.position.y;
+		float distSq_hit = dx_hit * dx_hit + dy_hit * dy_hit;
+		float sumR_hit = player.radius + currentEnemyRadius;
+
+		if (distSq_hit <= sumR_hit * sumR_hit) {
+			player.isHit = true;
+			if (enemy.smashCooldown > 90.0f) {
+				player.velocity.x = 22.0f * (player.position.x > enemy.position.x ? 1.0f : -1.0f);
+				player.velocity.y = 35.0f;
+				player.isJump = true;
+			}
+			else if (enemy.isDash) {
+				player.velocity.x = 18.0f * (player.position.x > enemy.position.x ? 1.0f : -1.0f);
+				player.velocity.y = 30.0f;
+				player.isJump = true;
+			}
+		}
 
 
 		//camera
@@ -1080,7 +1142,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 210, "w3 timer : %d", weapon3.flyTimer);
 			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x, player.position.y);
 			Novice::ScreenPrintf(0, 430, "playerV x : %0.2f  y : %0.2f", player.velocity.x, player.velocity.y);
+			Novice::ScreenPrintf(0, 460, "SmashCharge: %.1f / 200.0", enemy.smashCharge);
+			if (enemy.smashCooldown > 90.0f) 
 			for (int i = 0; i < 3; i++)
+
 			{
 				Novice::ScreenPrintf(0, 480 + i * 20, "HIT bullet %d! health=%d", i, player.health);
 

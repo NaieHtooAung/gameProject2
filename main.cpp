@@ -134,7 +134,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.position.x = 840.0f;
 	enemy.position.y = 640.0f;
 	enemy.radius = 64.0f;
-	enemy.health = 100;
+	enemy.health = 400;
 	enemy.speed = 3.0f;
 	enemy.speedInitial = enemy.speed;  // store initial
 	enemy.patternTimer = 180;
@@ -673,7 +673,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemy.isCharging = false;
 					enemy.isDash = true;
 					enemy.dashTimer = enemy.dashTimerInitial;
-
+					
 					// **Lock the target position at dash‐start**
 					enemy.dashTargetPosition.x = player.position.x;
 					enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters
@@ -688,14 +688,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else if (enemy.isDash) {
 				enemy.dashCoolTimer--;
-				float ax = player.position.x - enemy.position.x;
-				float dy = player.position.y - enemy.position.y;
-				float distSq = ax * ax + dy * dy;
-				float sumR = player.radius + enemy.radius;
-				if (distSq <= sumR * sumR) {
-					player.health -= 5;
-
-				}
+				
+				
 				// Compute direction vector toward the locked target
 				//float dx = enemy.dashTargetPosition.x - enemy.position.x;
 				//float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
@@ -738,7 +732,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					}
 				}
 			}
-
+			if (enemy.isDash)
+			{
+				float ax = player.position.x - enemy.position.x;
+				float dy = player.position.y - enemy.position.y;
+				float distSq = ax * ax + dy * dy;
+				float sumR = player.radius + enemy.radius;
+				if (distSq <= sumR * sumR) {
+					player.isDamage = true;
+					if (player.isDamage)
+					{
+						player.health -= 2;
+					}
+				}
+				else
+				{
+					player.isDamage = false;
+				}
+			}
 		
 			
 			// Reset cooldown if needed
@@ -967,7 +978,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//EnemyHP Bar
 		//enemy.health = 80;   //max=100
-		Novice::DrawBox(211, 19, enemy.health * 858 / 100, 26, 0.0f, RED, kFillModeSolid);
+		Novice::DrawBox(211, 19, enemy.health * 858 / 400, 26, 0.0f, RED, kFillModeSolid);
 
 		//weapon1 CD Bar
 		if (weapon1.flyTimer >= weapon1.flyTime)

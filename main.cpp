@@ -56,6 +56,8 @@ typedef struct Enemy {
 	bool isDash;
 
 	Vector2 dashTargetPosition;
+	float smashCharge = 0.0f;
+	float smashCooldown = 0.0f;
 } Enemy;
 
 typedef struct Bullet {
@@ -138,7 +140,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.position.x = 840.0f;
 	enemy.position.y = 640.0f;
 	enemy.radius = 64.0f;
-	enemy.health = 100;
+	enemy.health = 400;
 	enemy.speed = 3.0f;
 	enemy.speedInitial = enemy.speed;  // store initial
 	enemy.patternTimer = 180;
@@ -641,35 +643,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						enemy.position.y = 640.0f;    // maintain ground Y
 						enemySprite.frame = 1;
 
-						if (enemy.chargeTimer <= 0) {
-							// Charge ends → start dash
-							enemy.isCharging = false;
-							enemy.isDash = true;
-							enemy.dashTimer = enemy.dashTimerInitial;
-
-							// **Lock the target position at dash‐start**
-							enemy.dashTargetPosition.x = player.position.x;
-							enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters
-							if (enemy.dashTargetPosition.x > enemy.position.x) {
-								enemy.dashDirection = 1;
-							}
-							else {
-								enemy.dashDirection = -1;
-							}
-						}
-
+				if (enemy.chargeTimer <= 0) {
+					// Charge ends → start dash
+					enemy.isCharging = false;
+					enemy.isDash = true;
+					enemy.dashTimer = enemy.dashTimerInitial;
+					
+					// **Lock the target position at dash‐start**
+					enemy.dashTargetPosition.x = player.position.x;
+					enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters
+					if (enemy.dashTargetPosition.x > enemy.position.x) {
+						enemy.dashDirection = 1;
 					}
-					else if (enemy.isDash) {
-						enemy.dashCoolTimer--;
-						float ax = player.position.x - enemy.position.x;
-						float dy = player.position.y - enemy.position.y;
-						float distSq = ax * ax + dy * dy;
-						float sumR = player.radius + enemy.radius;
-						if (distSq <= sumR * sumR) {
-							player.health -= 5;
-
-						}
-						// Compute direction vector toward the locked target
+					else {
+						enemy.dashDirection = -1;
+					}
+				}
+				
+			}
+			else if (enemy.isDash) {
+				enemy.dashCoolTimer--;
+				
+				
+				// Compute direction vector toward the locked target
+				//float dx = enemy.dashTargetPosition.x - enemy.position.x;
+				//float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
+				//float len = sqrtf(dx * dx + dy * dy);
+				//if (len != 0.0f) {
+				//	dx /= len;
+				//	dy /= len;
+				//}
 
 						// If you only want horizontal (X axis) dash and maintain ground Y:
 						enemy.position.x += enemy.dashDirection * enemy.dashSpeed;
@@ -685,35 +688,52 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 							//// After finishing dash, face player again for next charge
 
-							if (enemy.dashCount < enemy.maxDashCount) {
-								// start next charge
-								enemy.isCharging = true;
-								enemy.chargeTimer = 60;
-							}
-							else {
-								// all dashes done → reset
-								enemy.dashCount = 0;
-								enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
-								enemy.attackPattern = 0;  // or next pattern
-							}
-						}
-						enemySprite.frame = 2;
+					if (enemy.dashCount < enemy.maxDashCount) {
+						// start next charge
+						enemy.isCharging = true;
+						enemy.chargeTimer = 60;
 					}
-
-
-
-					// Reset cooldown if needed
-					if (enemy.dashCoolTimer <= 0) {
+					else {
+						// all dashes done → reset
+						enemy.dashCount = 0;
 						enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
+						enemy.attackPattern = 0;  // or next pattern
 					}
 				}
-				// --- Bullet shooting for pattern 2 ---
-				if (enemy.attackPattern == 2) {
-					enemy.speed = 0.0f; // stationary while shooting
-					// Let's use a counter to track how many bullets fired this burst
-					static int shotCount = 0;
-					static int shotTimer = 0;
-					const int delayBetweenShots = 10; // frames
+				enemySprite.frame = 2;
+			}
+			if (enemy.isDash)
+			{
+				float ax = player.position.x - enemy.position.x;
+				float dy = player.position.y - enemy.position.y;
+				float distSq = ax * ax + dy * dy;
+				float sumR = player.radius + enemy.radius;
+				if (distSq <= sumR * sumR) {
+					player.isDamage = true;
+					if (player.isDamage)
+					{
+						player.health -= 2;
+					}
+				}
+				else
+				{
+					player.isDamage = false;
+				}
+			}
+		
+			
+			// Reset cooldown if needed
+			if (enemy.dashCoolTimer <= 0) {
+				enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
+			}
+		}
+		// --- Bullet shooting for pattern 2 ---
+		if (enemy.attackPattern == 2) {
+			enemy.speed = 0.0f; // stationary while shooting
+			// Let's use a counter to track how many bullets fired this burst
+			static int shotCount = 0;
+			static int shotTimer = 0;
+			const int delayBetweenShots = 10; // frames
 
 					// If not currently shooting a burst, start it
 					if (shotCount == 0 && shotTimer == 0) {
@@ -876,16 +896,76 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					float trackInnerDirection = -atan2f(0, ax);
 					//player.velocity.x = 5 * cosf(trackInnerDirection);
 
-					if (enemy.isDash)
-					{
-						player.velocity.x = 15 * cosf(trackInnerDirection); //方向判定彈射
-						player.velocity.y = 25;
-						player.isJump = true;
-					}
+			if (enemy.isDash)
+			{
+				player.velocity.x = 15 * cosf(trackInnerDirection); //方向判定彈射
+				player.velocity.y = 25;
+				player.isJump = true;
+			}
 
 
-				}
+		}
 
+		static float smashFlashTimer = 0.0f;
+		// タイマー更新
+		smashFlashTimer += 1.0f;
+		if (smashFlashTimer >= 20.0f) smashFlashTimer = 0.0f;
+
+		// 剣が敵に当たったらゲージ増加
+		static bool wasHitLastFrame = false;
+
+		if (weapon1.isHit && weapon1.hitReady && !wasHitLastFrame) {
+			enemy.smashCharge += 20.0f;
+			if (enemy.smashCharge >= 200.0f) {   
+				enemy.smashCharge = 200.0f;  
+			}
+			weapon1.hitReady = false;
+		}
+		wasHitLastFrame = weapon1.isHit;
+
+	
+		// 攻撃してないときは少しずつ減少
+		if (!(keys[DIK_J] && weapon1.state == 1 && weapon1.hitReady)) {
+			if (enemy.smashCharge > 0.0f) {  
+				enemy.smashCharge -= 0.05f;
+				if (enemy.smashCharge < 0.0f) enemy.smashCharge = 0.0f;
+			}
+		}
+
+		// クールダウン減少
+		if (enemy.smashCooldown > 0.0f) {
+			enemy.smashCooldown -= 1.0f;
+		}
+
+		if (enemy.smashCharge >= 199.9f && enemy.smashCooldown <= 0.0f) {  
+			enemy.smashCharge = 0.0f;
+			enemy.smashCooldown = 150.0f;
+		}
+		// スマッシュ中は敵の判定巨大化
+		float currentEnemyRadius = enemy.radius;
+		if (enemy.smashCooldown > 90.0f) {
+			currentEnemyRadius = 140.0f;
+		}
+
+		// 当たり判定
+		float dx_hit = player.position.x - enemy.position.x;
+		float dy_hit = player.position.y - enemy.position.y;
+		float distSq_hit = dx_hit * dx_hit + dy_hit * dy_hit;
+		float sumR_hit = player.radius + currentEnemyRadius;
+
+		if (distSq_hit <= sumR_hit * sumR_hit) {
+			player.isHit = true;
+			if (enemy.smashCooldown > 90.0f) {
+				player.velocity.x = 22.0f * (player.position.x > enemy.position.x ? 1.0f : -1.0f);
+				player.velocity.y = 35.0f;
+				player.isJump = true;
+			}
+			else if (enemy.isDash) {
+				player.velocity.x = 18.0f * (player.position.x > enemy.position.x ? 1.0f : -1.0f);
+				player.velocity.y = 30.0f;
+				player.isJump = true;
+			}
+		}
 
 				//camera
 				if (player.position.x < 300)
@@ -1011,9 +1091,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				//int playerHp = 80;  //max=100
 				Novice::DrawBox(83, 99, player.health * 330 / 100, 26, 0.0f, RED, kFillModeSolid);
 
-				//EnemyHP Bar
-				//enemy.health = 80;   //max=100
-				Novice::DrawBox(211, 19, enemy.health * 858 / 100, 26, 0.0f, RED, kFillModeSolid);
+		//EnemyHP Bar
+		//enemy.health = 80;   //max=100
+		Novice::DrawBox(211, 19, enemy.health * 858 / 400, 26, 0.0f, RED, kFillModeSolid);
 
 				//weapon1 CD Bar
 				if (weapon1.flyTimer >= weapon1.flyTime)
@@ -1153,7 +1233,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 210, "w3 timer : %d", weapon3.flyTimer);
 			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x, player.position.y);
 			Novice::ScreenPrintf(0, 430, "playerV x : %0.2f  y : %0.2f", player.velocity.x, player.velocity.y);
+			Novice::ScreenPrintf(0, 460, "SmashCharge: %.1f / 200.0", enemy.smashCharge);
+			if (enemy.smashCooldown > 90.0f) 
 			for (int i = 0; i < 3; i++)
+
 			{
 				Novice::ScreenPrintf(0, 480 + i * 20, "HIT bullet %d! health=%d", i, player.health);
 

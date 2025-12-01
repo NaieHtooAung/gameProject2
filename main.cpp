@@ -56,6 +56,8 @@ typedef struct Enemy {
 	bool isDash;
 
 	Vector2 dashTargetPosition;
+	float smashCharge = 0.0f;
+	float smashCooldown = 0.0f;
 } Enemy;
 
 typedef struct Bullet {
@@ -108,6 +110,8 @@ Sprite enemySprite;
 
 int backEndData = true;
 
+int gamePhase = 0; //0=title  1=tutorial  2=game  3=result  
+int inPhaseControll = 0; //0=intro  1=setup  2=main  3=outro
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -212,468 +216,434 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓更新処理ここから
 		///
-		/// 横移動
-		float dirX = 0.0f;
-		if (keys[DIK_A])
+		 
+		if(gamePhase==0)
 		{
-			dirX -= 1;
-			player.facing = -1;
-		}
-		if (keys[DIK_D])
-		{
-			dirX += 1;
-			player.facing = 1;
-		}
-		if (dirX != 0)
-		{
-			float tangant = atan2f(0, dirX);
-			float moveX = cosf(tangant);
-			player.position.x += moveX * player.speed;
-		}
-		/// ダッシュ処理
-		if (keys[DIK_LSHIFT] && !preKeys[DIK_LSHIFT])
-		{
-			if (player.dashTimer == player.dashTime)
+			if(inPhaseControll==0)
 			{
-				player.velocity.x = 0;
+				//intro
+				inPhaseControll = 1;
 			}
-			player.isDash = true;
-		}
-		if (player.isDash)
-		{
-			player.dashCoolTimer--;
-			if (player.dashCoolTimer >= player.dashCoolTime - player.dashTime)
+			else if(inPhaseControll==1)
 			{
-				player.speed = (float)player.dashSpeed;
-				player.dashTimer--;
+				//setup
+				inPhaseControll = 2;
 			}
-			if (player.dashTimer <= 0)
+			else if(inPhaseControll==2)
 			{
-
-				player.speed = 5;
+				//main
+				if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
+				{
+					inPhaseControll = 3;
+				}
+			}
+			else if(inPhaseControll==3)
+			{
+				//outro
+				gamePhase = 1;
+				inPhaseControll = 0;
 			}
 		}
-		if (player.dashCoolTimer <= 0)
-		{
-			player.dashTimer = player.dashTime;
-			player.dashCoolTimer = player.dashCoolTime;
-			player.isDash = false;
-
-		}
-		/// ジャンプ処理
-		if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
-		{
-			player.isJump = true;
-		}
-		if (player.isJump)
-		{
-			player.velocity.y -= 1;
-			player.position.y -= player.velocity.y;
-		}
-		if (player.position.y >= 640)
-		{
-			player.velocity.y = 20;
-			player.position.y = 640;
-			player.isJump = false;
-			if (player.velocity.x > 1)
+		else if (gamePhase == 1)
+		{ 
+			if (inPhaseControll == 0)
 			{
-				player.velocity.x -= 1;
+				//intro
+				inPhaseControll = 1;
 			}
-			else if (player.velocity.x < -1)
+			else if (inPhaseControll == 1)
 			{
-				player.velocity.x += 1;
+				//setup
+				inPhaseControll = 2;
 			}
-			else
+			else if (inPhaseControll == 2)
 			{
-				player.velocity.x = 0;
+				//main
+				if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
+				{
+					inPhaseControll = 3;
+				}
 			}
-
-		}
-
-		///// 武器 for debug
-		//if (backEndData)
-		//{
-		//	if (weapon1.charge > 100)
-		//	{
-		//		weapon1.charge = 100;
-		//	}
-		//	if (!keys[DIK_J] && preKeys[DIK_J])
-		//	{
-		//		if (weapon1.state == 0)
-		//		{
-		//			weapon1.position.x = player.position.x+player.facing*48;
-		//			weapon1.position.y = player.position.y;
-		//			weapon1.state = 1;
-		//			weapon1.facing = player.facing;
-		//			weapon1.charge = 0;
-		//		}
-		//	}
-
-		//	if (weapon1.state == 1)
-		//	{
-		//		weapon1.flyTimer -= 1;
-		//		if (weapon1.isHit)
-		//		{
-
-		//		}
-
-		//		if (weapon1.flyTimer <= 0)
-		//		{
-		//			weapon1.state = 0;
-		//			weapon1.flyTimer = weapon1.flyTime;
-		//		}
-		//	}
-
-		//	if (keys[DIK_J])
-		//	{
-		//		weapon1.charge++;
-		//	}
-		//	else
-		//	{
-		//		weapon1.charge = 0;
-		//	}
-
-		//	if (weapon2.charge > 100)
-		//	{
-		//		weapon2.charge = 100;
-		//	}
-		//	if (!keys[DIK_K] && preKeys[DIK_K])
-		//	{
-		//		if (weapon2.state == 0)
-		//		{
-		//			weapon2.position.x = player.position.x;
-		//			weapon2.position.y = player.position.y;
-		//			weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
-		//			weapon2.velosity.y = -5;
-		//			weapon2.state = 1;
-		//			weapon2.facing = player.facing;
-		//			weapon2.charge = 0;
-		//		}
-		//	}
-
-		//	if (weapon2.state == 1)
-		//	{
-		//		weapon2.flyTimer -= 1;
-		//		weapon2.velosity.y += 0.5f; // 重力
-		//		if (weapon2.flyTimer <= 0)
-		//		{
-		//			weapon2.state = 0;
-		//			weapon2.flyTimer = weapon2.flyTime;
-		//		}
-		//	}
-
-		//	if (keys[DIK_L] && !preKeys[DIK_L])
-		//	{
-		//		if (weapon3.state == 0)
-		//		{
-		//			weapon3.position.x = player.position.x;
-		//			weapon3.position.y = player.position.y;
-		//			weapon3.velosity.x = 30.0f * player.facing;
-		//			weapon3.state = 1;
-		//			weapon3.facing = player.facing;
-		//		}
-		//	}
-
-		//	if (weapon3.state == 1)
-		//	{
-		//		weapon3.flyTimer -= 1;
-		//		weapon3.velosity.x -= weapon3.facing;
-		//		if (weapon3.velosity.x * weapon3.facing < 0)
-		//		{
-		//			weapon3.state = 2;
-		//		}
-		//	}
-		//	else if (weapon3.state == 2)
-		//	{
-		//		weapon3.flyTimer -= 1;
-		//		weapon3.velosity.x -= weapon3.facing;
-		//		if (weapon3.flyTimer <= 0)
-		//		{
-		//			weapon3.state = 0;
-		//			weapon3.flyTimer = weapon3.flyTime;
-		//		}
-		//	}
-		//}
-
-		/// 武器1(Sword)
-
-		if (weapon1.charge > 100)
-		{
-			weapon1.charge = 100;
-		}
-		if (!keys[DIK_J] && preKeys[DIK_J])
-		{
-			player.weapon = 0;
-			if (weapon1.state == 0)
+			else if (inPhaseControll == 3)
 			{
-				weapon1.position.x = player.position.x + player.facing * 48;
-				weapon1.position.y = player.position.y;
-				weapon1.state = 1;
-				weapon1.facing = player.facing;
-				weapon1.hitReady = true;
+				//outro
+				gamePhase = 2;
+				inPhaseControll = 0;
 			}
 		}
-
-		if (weapon1.state == 0)
+		else if (gamePhase == 2)
 		{
-			if (keys[DIK_J])
+			if (inPhaseControll == 0)
 			{
-				weapon1.charge++;
+				//intro
+				inPhaseControll = 1;
 			}
-			else
+			else if (inPhaseControll == 1)
 			{
-				weapon1.charge = 0;
+				//setup
+				inPhaseControll = 2;
 			}
-		}
-		else if (weapon1.state == 1)
-		{
-			weapon1.flyTimer -= 1;
-			if (weapon1.isHit)//敵を命中したら
+			else if (inPhaseControll == 2)
 			{
-				weapon1.hitReady = false;
-				enemy.health -= 2 + weapon1.charge/20;
-			}
+				//main
+				/// 横移動
+				float dirX = 0.0f;
+				if (keys[DIK_A])
+				{
+					dirX -= 1;
+					player.facing = -1;
+				}
+				if (keys[DIK_D])
+				{
+					dirX += 1;
+					player.facing = 1;
+				}
+				if (dirX != 0)
+				{
+					float tangant = atan2f(0, dirX);
+					float moveX = cosf(tangant);
+					player.position.x += moveX * player.speed;
+				}
+				/// ダッシュ処理
+				if (keys[DIK_LSHIFT] && !preKeys[DIK_LSHIFT])
+				{
+					if (player.dashTimer == player.dashTime)
+					{
+						player.velocity.x = 0;
+					}
+					player.isDash = true;
+				}
+				if (player.isDash)
+				{
+					player.dashCoolTimer--;
+					if (player.dashCoolTimer >= player.dashCoolTime - player.dashTime)
+					{
+						player.speed = (float)player.dashSpeed;
+						player.dashTimer--;
+					}
+					if (player.dashTimer <= 0)
+					{
 
-			if (weapon1.flyTimer <= 0)
-			{
-				weapon1.state = 0;
-				weapon1.flyTimer = weapon1.flyTime;
-			}
-			
-		}
-		
-		//W1当たり判定
-		float w1eDistX = enemy.position.x - weapon1.position.x;
-		float w1eDistY = enemy.position.y - weapon1.position.y;
-		float w1eDistSq = w1eDistX * w1eDistX + w1eDistY * w1eDistY;
-		float w1eR = enemy.radius + 16.0f; // 武器の半径を16と仮定
-		if (w1eDistSq <= w1eR * w1eR && weapon1.hitReady)
-		{
-			weapon1.isHit = 1;
-		}
-		else
-		{
-			weapon1.isHit = 0;
-		}
+						player.speed = 5;
+					}
+				}
+				if (player.dashCoolTimer <= 0)
+				{
+					player.dashTimer = player.dashTime;
+					player.dashCoolTimer = player.dashCoolTime;
+					player.isDash = false;
 
-		/// 武器2(arrow)
+				}
+				/// ジャンプ処理
+				if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
+				{
+					player.isJump = true;
+				}
+				if (player.isJump)
+				{
+					player.velocity.y -= 1;
+					player.position.y -= player.velocity.y;
+				}
+				if (player.position.y >= 640)
+				{
+					player.velocity.y = 20;
+					player.position.y = 640;
+					player.isJump = false;
+					if (player.velocity.x > 1)
+					{
+						player.velocity.x -= 1;
+					}
+					else if (player.velocity.x < -1)
+					{
+						player.velocity.x += 1;
+					}
+					else
+					{
+						player.velocity.x = 0;
+					}
 
-		if (weapon2.charge > 100)
-		{
-			weapon2.charge = 100;
-		}
-		if (!keys[DIK_K] && preKeys[DIK_K])
-		{
-			player.weapon = 1;
-			if (weapon2.state == 0)
-			{
-				weapon2.position.x = player.position.x;
-				weapon2.position.y = player.position.y;
-				weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
-				weapon2.velosity.y = -5;
-				weapon2.state = 1;
-				weapon2.facing = player.facing;
-				weapon2.hitReady = true;
-			}
-		}
+				}
 
-		if (weapon2.state == 0)
-		{
-			if (keys[DIK_K])
-			{
-				weapon2.charge++;
-			}
-			else
-			{
-				weapon2.charge = 0;
-			}
-		}
-		if (weapon2.state == 1)
-		{
-			weapon2.flyTimer -= 1;
-			weapon2.velosity.y += 0.5f; // 重力
-			if (weapon2.flyTimer <= 0)
-			{
-				weapon2.state = 0;
-				weapon2.flyTimer = weapon2.flyTime;
-			}
-			if (weapon2.isHit)//敵を命中したら
-			{
-				weapon2.hitReady = false;
-				weapon2.velosity.x = 0;
-				weapon2.velosity.y = 0;
-				enemy.health -= 2 + weapon2.charge / 20;
-			}
-		}
 
-		if (weapon2.position.y > 700)
-		{
-			weapon2.velosity.x = 0;
-			weapon2.velosity.y = 0;
-		}
+				/// 武器1(Sword)
 
-		weapon2.position.x += weapon2.velosity.x;
-		weapon2.position.y += weapon2.velosity.y;
+				if (weapon1.charge > 100)
+				{
+					weapon1.charge = 100;
+				}
+				if (!keys[DIK_J] && preKeys[DIK_J])
+				{
+					player.weapon = 0;
+					if (weapon1.state == 0)
+					{
+						weapon1.position.x = player.position.x + player.facing * 48;
+						weapon1.position.y = player.position.y;
+						weapon1.state = 1;
+						weapon1.facing = player.facing;
+						weapon1.hitReady = true;
+					}
+				}
 
-		//w2当たり判定
-		float w2eDistX = enemy.position.x - weapon2.position.x;
-		float w2eDistY = enemy.position.y - weapon2.position.y;
-		float w2eDistSq = w2eDistX * w2eDistX + w2eDistY * w2eDistY;
-		float w2eR = enemy.radius + 10.0f; // 武器の半径を10と仮定
-		if (w2eDistSq <= w2eR * w2eR && weapon2.hitReady)
-		{
-			weapon2.isHit = 1;
-		}
-		else
-		{
-			weapon2.isHit = 0;
-		}
+				if (weapon1.state == 0)
+				{
+					if (keys[DIK_J])
+					{
+						weapon1.charge++;
+					}
+					else
+					{
+						weapon1.charge = 0;
+					}
+				}
+				else if (weapon1.state == 1)
+				{
+					weapon1.flyTimer -= 1;
+					if (weapon1.isHit)//敵を命中したら
+					{
+						weapon1.hitReady = false;
+						enemy.health -= 2 + weapon1.charge / 20;
+					}
 
-		/// 武器3(ブーメラン)
-		if (keys[DIK_L] && !preKeys[DIK_L])
-		{
-			player.weapon = 2;
-			if (weapon3.state == 0)
-			{
-				weapon3.position.x = player.position.x;
-				weapon3.position.y = player.position.y;
-				weapon3.velosity.x = 30.0f * player.facing;
-				weapon3.state = 1;
-				weapon3.facing = player.facing;
-				weapon3.hitReady = true;
-			}
-		}
+					if (weapon1.flyTimer <= 0)
+					{
+						weapon1.state = 0;
+						weapon1.flyTimer = weapon1.flyTime;
+					}
 
-		if (weapon3.state == 0)
-		{
-			//待機中は特に処理なし
-		}
-		else if (weapon3.state == 1)
-		{
-			weapon3.flyTimer -= 1;
-			weapon3.velosity.x -= weapon3.facing;
-			if (weapon3.velosity.x * weapon3.facing < 0)
-			{
-				weapon3.state = 2;
-				weapon3.hitReady = true;
-			}
-			if (weapon3.isHit )
-			{
-				weapon3.hitReady = false;
-				enemy.health -= 5 ;
-			}
-			
-		}
-		else if (weapon3.state == 2)
-		{
-			weapon3.flyTimer -= 1;
-			weapon3.velosity.x -= weapon3.facing;
-			if (weapon3.flyTimer <= 0)
-			{
-				weapon3.state = 0;
-				weapon3.flyTimer = weapon3.flyTime;
-			}
-			if (weapon3.isHit)
-			{
-				weapon3.hitReady = false;
-				enemy.health -= 5 ;
-			}
-			
-		}
-		weapon3.position.x += weapon3.velosity.x;
-		weapon3.position.y += weapon3.velosity.y;
+				}
 
-		//w3当たり判定
-		float w3eDistX = enemy.position.x - weapon3.position.x;
-		float w3eDistY = enemy.position.y - weapon3.position.y;
-		float w3eDistSq = w3eDistX * w3eDistX + w3eDistY * w3eDistY;
-		float w3eR = enemy.radius + 10.0f; // 武器の半径を10と仮定
-		if (w3eDistSq <= w3eR * w3eR && weapon3.hitReady)
-		{
-			weapon3.isHit = 1;
-		}
-		else
-		{
-			weapon3.isHit = 0;
-		}
+				//W1当たり判定
+				float w1eDistX = enemy.position.x - weapon1.position.x;
+				float w1eDistY = enemy.position.y - weapon1.position.y;
+				float w1eDistSq = w1eDistX * w1eDistX + w1eDistY * w1eDistY;
+				float w1eR = enemy.radius + 16.0f; // 武器の半径を16と仮定
+				if (w1eDistSq <= w1eR * w1eR && weapon1.hitReady)
+				{
+					weapon1.isHit = 1;
+				}
+				else
+				{
+					weapon1.isHit = 0;
+				}
 
-		float w3pDistX = player.position.x - weapon3.position.x;
-		float w3pDistY = player.position.y - weapon3.position.y;
-		float w3pDistSq = w3pDistX * w3pDistX + w3pDistY * w3pDistY;
-		float w3pR = player.radius + 10.0f; // 武器の半径を10と仮定
-		if (w3pDistSq <= w3pR * w3pR && weapon3.state == 2)
-		{
-			weapon3.state = 0;
-			weapon3.flyTimer = weapon3.flyTime;
-			weapon3.position.y = -100.0f;
-		}
-		
+				/// 武器2(arrow)
 
-		/// 敵の移動
-		enemySprite.frame = 0;
-		enemy.position.x += enemy.speed;
-		if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
-		{
-			enemy.speed *= -1;
-		}
-		if (enemy.patternCD >= 180)
-		{
-			if (enemy.patternChange)
-			{
-				enemy.patternTimer--;
-			}
-		}
-		// 敵がプレイヤーの方向を向く
-		if (player.position.x > enemy.position.x) {
-			enemy.direction = 1;  // 右
-		}
-		else {
-			enemy.direction = -1; // 左
-		}
+				if (weapon2.charge > 100)
+				{
+					weapon2.charge = 100;
+				}
+				if (!keys[DIK_K] && preKeys[DIK_K])
+				{
+					player.weapon = 1;
+					if (weapon2.state == 0)
+					{
+						weapon2.position.x = player.position.x;
+						weapon2.position.y = player.position.y;
+						weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
+						weapon2.velosity.y = -5;
+						weapon2.state = 1;
+						weapon2.facing = player.facing;
+						weapon2.hitReady = true;
+					}
+				}
 
-		/// パターン変更
-		if (enemy.patternTimer <= 0)
-		{
-			enemy.patternCD--;
-			enemy.patternChange = false;
-			enemy.patternTimer = 180;
+				if (weapon2.state == 0)
+				{
+					if (keys[DIK_K])
+					{
+						weapon2.charge++;
+					}
+					else
+					{
+						weapon2.charge = 0;
+					}
+				}
+				if (weapon2.state == 1)
+				{
+					weapon2.flyTimer -= 1;
+					weapon2.velosity.y += 0.5f; // 重力
+					if (weapon2.flyTimer <= 0)
+					{
+						weapon2.state = 0;
+						weapon2.flyTimer = weapon2.flyTime;
+					}
+					if (weapon2.isHit)//敵を命中したら
+					{
+						weapon2.hitReady = false;
+						weapon2.velosity.x = 0;
+						weapon2.velosity.y = 0;
+						enemy.health -= 2 + weapon2.charge / 20;
+					}
+				}
 
-		}
-		if (enemy.patternTimer == 180)
-		{
-			enemy.patternCD--;
-			if (enemy.patternCD <= 0)
-			{
-				enemy.attackPattern = rand() % 3 + 1;
-				enemy.patternCD = 180;
-				enemy.patternChange = true;
-			}
-		}
+				if (weapon2.position.y > 700)
+				{
+					weapon2.velosity.x = 0;
+					weapon2.velosity.y = 0;
+				}
 
-		// --- Enemy “charge → dash” logic for pattern 1 ---
-		if (enemy.attackPattern == 1) {
-			// 1) At the very start of charge, lock facing direction
-			if (!enemy.isCharging && !enemy.isDash
-				&& enemy.dashCount == 0
-				&& enemy.dashCoolTimer == enemy.dashCoolTimerInitial) {
+				weapon2.position.x += weapon2.velosity.x;
+				weapon2.position.y += weapon2.velosity.y;
+
+				//w2当たり判定
+				float w2eDistX = enemy.position.x - weapon2.position.x;
+				float w2eDistY = enemy.position.y - weapon2.position.y;
+				float w2eDistSq = w2eDistX * w2eDistX + w2eDistY * w2eDistY;
+				float w2eR = enemy.radius + 10.0f; // 武器の半径を10と仮定
+				if (w2eDistSq <= w2eR * w2eR && weapon2.hitReady)
+				{
+					weapon2.isHit = 1;
+				}
+				else
+				{
+					weapon2.isHit = 0;
+				}
+
+				/// 武器3(ブーメラン)
+				if (keys[DIK_L] && !preKeys[DIK_L])
+				{
+					player.weapon = 2;
+					if (weapon3.state == 0)
+					{
+						weapon3.position.x = player.position.x;
+						weapon3.position.y = player.position.y;
+						weapon3.velosity.x = 30.0f * player.facing;
+						weapon3.state = 1;
+						weapon3.facing = player.facing;
+						weapon3.hitReady = true;
+					}
+				}
+
+				if (weapon3.state == 0)
+				{
+					//待機中は特に処理なし
+				}
+				else if (weapon3.state == 1)
+				{
+					weapon3.flyTimer -= 1;
+					weapon3.velosity.x -= weapon3.facing;
+					if (weapon3.velosity.x * weapon3.facing < 0)
+					{
+						weapon3.state = 2;
+						weapon3.hitReady = true;
+					}
+					if (weapon3.isHit)
+					{
+						weapon3.hitReady = false;
+						enemy.health -= 5;
+					}
+
+				}
+				else if (weapon3.state == 2)
+				{
+					weapon3.flyTimer -= 1;
+					weapon3.velosity.x -= weapon3.facing;
+					if (weapon3.flyTimer <= 0)
+					{
+						weapon3.state = 0;
+						weapon3.flyTimer = weapon3.flyTime;
+					}
+					if (weapon3.isHit)
+					{
+						weapon3.hitReady = false;
+						enemy.health -= 5;
+					}
+
+				}
+				weapon3.position.x += weapon3.velosity.x;
+				weapon3.position.y += weapon3.velosity.y;
+
+				//w3当たり判定
+				float w3eDistX = enemy.position.x - weapon3.position.x;
+				float w3eDistY = enemy.position.y - weapon3.position.y;
+				float w3eDistSq = w3eDistX * w3eDistX + w3eDistY * w3eDistY;
+				float w3eR = enemy.radius + 10.0f; // 武器の半径を10と仮定
+				if (w3eDistSq <= w3eR * w3eR && weapon3.hitReady)
+				{
+					weapon3.isHit = 1;
+				}
+				else
+				{
+					weapon3.isHit = 0;
+				}
+
+				float w3pDistX = player.position.x - weapon3.position.x;
+				float w3pDistY = player.position.y - weapon3.position.y;
+				float w3pDistSq = w3pDistX * w3pDistX + w3pDistY * w3pDistY;
+				float w3pR = player.radius + 10.0f; // 武器の半径を10と仮定
+				if (w3pDistSq <= w3pR * w3pR && weapon3.state == 2)
+				{
+					weapon3.state = 0;
+					weapon3.flyTimer = weapon3.flyTime;
+					weapon3.position.y = -100.0f;
+				}
+
+
+				/// 敵の移動
+				enemySprite.frame = 0;
+				enemy.position.x += enemy.speed;
+				if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
+				{
+					enemy.speed *= -1;
+				}
+				if (enemy.patternCD >= 180)
+				{
+					if (enemy.patternChange)
+					{
+						enemy.patternTimer--;
+					}
+				}
+				// 敵がプレイヤーの方向を向く
 				if (player.position.x > enemy.position.x) {
-					enemy.direction = 1;
+					enemy.direction = 1;  // 右
 				}
 				else {
-					enemy.direction = -1;
+					enemy.direction = -1; // 左
 				}
-				
-				// Start charging
-				enemy.isCharging = true;
-				enemy.chargeTimer = 60;     // adjust as desired
-				enemy.position.y = 640.0f;  // ground Y fixed
-			}
 
-			if (enemy.isCharging) {
-				enemy.chargeTimer--;
-				enemy.speed = 0.0f;           // stand still while charging
-				enemy.position.y = 640.0f;    // maintain ground Y
-				enemySprite.frame = 1;
+				/// パターン変更
+				if (enemy.patternTimer <= 0)
+				{
+					enemy.patternCD--;
+					enemy.patternChange = false;
+					enemy.patternTimer = 180;
+
+				}
+				if (enemy.patternTimer == 180)
+				{
+					enemy.patternCD--;
+					if (enemy.patternCD <= 0)
+					{
+						enemy.attackPattern = rand() % 3 + 1;
+						enemy.patternCD = 180;
+						enemy.patternChange = true;
+					}
+				}
+
+				// --- Enemy “charge → dash” logic for pattern 1 ---
+				if (enemy.attackPattern == 1) {
+					// 1) At the very start of charge, lock facing direction
+					if (!enemy.isCharging && !enemy.isDash
+						&& enemy.dashCount == 0
+						&& enemy.dashCoolTimer == enemy.dashCoolTimerInitial) {
+						if (player.position.x > enemy.position.x) {
+							enemy.direction = 1;
+						}
+						else {
+							enemy.direction = -1;
+						}
+
+						// Start charging
+						enemy.isCharging = true;
+						enemy.chargeTimer = 60;     // adjust as desired
+						enemy.position.y = 640.0f;  // ground Y fixed
+					}
+
+					if (enemy.isCharging) {
+						enemy.chargeTimer--;
+						enemy.speed = 0.0f;           // stand still while charging
+						enemy.position.y = 640.0f;    // maintain ground Y
+						enemySprite.frame = 1;
 
 				if (enemy.chargeTimer <= 0) {
 					// Charge ends → start dash
@@ -706,25 +676,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				//	dy /= len;
 				//}
 
-				// If you only want horizontal (X axis) dash and maintain ground Y:
-				enemy.position.x += enemy.dashDirection * enemy.dashSpeed;
-				enemy.position.y = 640.0f;  // keeps Y fixed
+						// If you only want horizontal (X axis) dash and maintain ground Y:
+						enemy.position.x += enemy.dashDirection * enemy.dashSpeed;
+						enemy.position.y = 640.0f;  // keeps Y fixed
 
 
-				enemy.dashTimer--;
+						enemy.dashTimer--;
 
-				if (enemy.dashTimer <= 0) {
-					enemy.dashCount++;
-					enemy.isDash = false;
-					enemy.speed = enemy.speedInitial;
+						if (enemy.dashTimer <= 0) {
+							enemy.dashCount++;
+							enemy.isDash = false;
+							enemy.speed = enemy.speedInitial;
 
-					//// After finishing dash, face player again for next charge
-					//if (enemy.dashTargetPosition.x > enemy.position.x) {
-					//	enemy.dashDirection = 1;
-					//}
-					//else {
-					//	enemy.dashDirection = -1;
-					//}
+							//// After finishing dash, face player again for next charge
 
 					if (enemy.dashCount < enemy.maxDashCount) {
 						// start next charge
@@ -773,105 +737,105 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			static int shotTimer = 0;
 			const int delayBetweenShots = 10; // frames
 
-			// If not currently shooting a burst, start it
-			if (shotCount == 0 && shotTimer == 0) {
-				shotCount = 12;
-				shotTimer = delayBetweenShots;
-			}
-
-			if (shotCount > 0) {
-				shotTimer--;
-				if (shotTimer <= 0) {
-					// Find an inactive bullet in your bullet array
-					// --- When you shoot a bullet (spawn / fire) ---
-					for (int i = 0; i < 3; i++) {
-						if (!bullet[i].isShot) {
-							// initialize bullet for new shot
-							bullet[i].isShot = true;
-							bullet[i].isHit = false;                 // reset hit flag
-							bullet[i].position = enemy.position;      // spawn at enemy (or shooter) pos
-							// compute normalized direction to player
-							float dx = player.position.x - enemy.position.x;
-							float dy = player.position.y - enemy.position.y;
-							float len = sqrtf(dx * dx + dy * dy);
-							if (len != 0.0f) {
-								dx /= len; dy /= len;
-							}
-							// set velocity
-							bullet[i].velX = dx * bullet[i].speed;
-							bullet[i].velY = dy * bullet[i].speed;
-							bullet[i].velSaveX = bullet[i].velX;
-							bullet[i].velSaveY = bullet[i].velY;
-							break;  // spawn one bullet per call
-						}
-					}
-
-					
-					shotCount--;
-					shotTimer = delayBetweenShots;
-					if (shotCount <= 0)
-					{
-						enemy.attackPattern = 0;
-						enemy.speed = enemy.speedInitial;
+					// If not currently shooting a burst, start it
+					if (shotCount == 0 && shotTimer == 0) {
 						shotCount = 12;
+						shotTimer = delayBetweenShots;
+					}
+
+					if (shotCount > 0) {
+						shotTimer--;
+						if (shotTimer <= 0) {
+							// Find an inactive bullet in your bullet array
+							// --- When you shoot a bullet (spawn / fire) ---
+							for (int i = 0; i < 3; i++) {
+								if (!bullet[i].isShot) {
+									// initialize bullet for new shot
+									bullet[i].isShot = true;
+									bullet[i].isHit = false;                 // reset hit flag
+									bullet[i].position = enemy.position;      // spawn at enemy (or shooter) pos
+									// compute normalized direction to player
+									float dx = player.position.x - enemy.position.x;
+									float dy = player.position.y - enemy.position.y;
+									float len = sqrtf(dx * dx + dy * dy);
+									if (len != 0.0f) {
+										dx /= len; dy /= len;
+									}
+									// set velocity
+									bullet[i].velX = dx * bullet[i].speed;
+									bullet[i].velY = dy * bullet[i].speed;
+									bullet[i].velSaveX = bullet[i].velX;
+									bullet[i].velSaveY = bullet[i].velY;
+									break;  // spawn one bullet per call
+								}
+							}
+
+
+							shotCount--;
+							shotTimer = delayBetweenShots;
+							if (shotCount <= 0)
+							{
+								enemy.attackPattern = 0;
+								enemy.speed = enemy.speedInitial;
+								shotCount = 12;
+							}
+						}
+
+					}
+					enemySprite.frame = 3;
+				}
+				// --- Bullet‐Player collision check ---
+					// --- Each frame: update all bullets (movement + collision + deactivate) ---
+				for (int i = 0; i < 3; i++) {
+					if (!bullet[i].isShot) continue;
+
+					// Move bullet
+					bullet[i].position.x += bullet[i].velSaveX;
+					bullet[i].position.y += bullet[i].velSaveY;
+
+					// Optional: off-screen check → deactivate
+					if (bullet[i].position.x < 0 || bullet[i].position.x > 1280 ||
+						bullet[i].position.y < 0 || bullet[i].position.y > 720) {
+						bullet[i].isShot = false;
+						continue;
+					}
+
+					// Collision check: player vs bullet (circle-circle)
+					float dx = player.position.x - bullet[i].position.x;
+					float dy = player.position.y - bullet[i].position.y;
+					float distSq = dx * dx + dy * dy;
+					float radiusSum = player.radius + bullet[i].radius;
+
+					if (distSq <= radiusSum * radiusSum) {
+						// Hit detected — apply damage
+						player.health -= 5;
+						if (player.health < 0) player.health = 0;
+
+						// Deactivate bullet so it doesn’t hit again
+						bullet[i].isShot = false;
 					}
 				}
 
-			}
-			enemySprite.frame = 3;
-		}
-		// --- Bullet‐Player collision check ---
-			// --- Each frame: update all bullets (movement + collision + deactivate) ---
-		for (int i = 0; i < 3; i++) {
-			if (!bullet[i].isShot) continue;
+				if (enemy.attackPattern == 3) {
+					for (int i = 0; i < 3; i++) {
+						// If this ball is not currently falling, start it
+						if (!sb[i].isFalling) {
+							sb[i].isFalling = true;
+							sb[i].position.y = -100.0f;      // start at top
+							sb[i].position.x = (float)(rand() % 1230 + 50);
+						}
 
-			// Move bullet
-			bullet[i].position.x +=bullet[i].velSaveX;
-			bullet[i].position.y += bullet[i].velSaveY;
-			
-			// Optional: off-screen check → deactivate
-			if (bullet[i].position.x < 0 || bullet[i].position.x > 1280 ||
-				bullet[i].position.y < 0 || bullet[i].position.y > 720) {
-				bullet[i].isShot = false;
-				continue;
-			}
+						// If falling, move it
+						if (sb[i].isFalling) {
+							sb[i].position.y += sb[i].speed;
+						}
 
-			// Collision check: player vs bullet (circle-circle)
-			float dx = player.position.x - bullet[i].position.x;
-			float dy = player.position.y - bullet[i].position.y;
-			float distSq = dx * dx + dy * dy;
-			float radiusSum = player.radius + bullet[i].radius;
-
-			if (distSq <= radiusSum * radiusSum) {
-				// Hit detected — apply damage
-				player.health -= 5;
-				if (player.health < 0) player.health = 0;
-
-				// Deactivate bullet so it doesn’t hit again
-				bullet[i].isShot = false;
-			}
-		}
-
-		if (enemy.attackPattern == 3) {
-			for (int i = 0; i < 3; i++) {
-				// If this ball is not currently falling, start it
-				if (!sb[i].isFalling) {
-					sb[i].isFalling = true;
-					sb[i].position.y = -100.0f;      // start at top
-					sb[i].position.x = (float)(rand() % 1230 + 50);
-				}
-
-				// If falling, move it
-				if (sb[i].isFalling) {
-					sb[i].position.y += sb[i].speed;
-				}
-
-				// If it exits screen, reset it
-				if (sb[i].position.y > 720) {
-					sb[i].isFalling = false;
-					sb[i].position.y = -100.0f;
-					sb[i].position.x = (float)(rand() % 1230 + 50);
-				}
+						// If it exits screen, reset it
+						if (sb[i].position.y > 720) {
+							sb[i].isFalling = false;
+							sb[i].position.y = -100.0f;
+							sb[i].position.x = (float)(rand() % 1230 + 50);
+						}
 
 				
 			}
@@ -906,41 +870,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				sb[i].position.y += sb[i].speed;
 			}
 
-		}
-		
-		player.position.x += player.velocity.x;
-		// --- Collision check every frame ---
-		// Reset hit state
-		player.isHit = false;
+				}
 
-		float ax = player.position.x - enemy.position.x;
-		float dy = player.position.y - enemy.position.y;
-		float distSq = ax * ax + dy * dy;
-		float sumR = player.radius + enemy.radius;
-		if (distSq <= sumR * sumR) {
-			player.isHit = true;
+				player.position.x += player.velocity.x;
+				// --- Collision check every frame ---
+				// Reset hit state
+				player.isHit = false;
 
-		}
-		else
-		{
-			player.isHit = false;
-		}
+				float ax = player.position.x - enemy.position.x;
+				float dy = player.position.y - enemy.position.y;
+				float distSq = ax * ax + dy * dy;
+				float sumR = player.radius + enemy.radius;
+				if (distSq <= sumR * sumR) {
+					player.isHit = true;
 
-		/*float bx = enemy.dashTargetPosition.x - enemy.position.x;
-		float ey = enemy.dashTargetPosition.y - enemy.position.y;
-		float distSqDTP = bx * bx + ey * ey;
-		if (distSqDTP <= enemy.radius * enemy.radius) {
-			enemy.dashTimer = 0;
-		}*/
+				}
+				else
+				{
+					player.isHit = false;
+				}
 
-		//bump
-		if (player.isHit)
-		{
-			player.velocity.y += 1;
-			player.position.x = enemy.position.x + sumR * cosf(atan2f(dy, ax));
-			player.position.y = enemy.position.y + sumR * sinf(atan2f(dy, ax));
-			float trackInnerDirection = -atan2f(0, ax);
-			//player.velocity.x = 5 * cosf(trackInnerDirection);
+				//bump
+				if (player.isHit)
+				{
+					player.velocity.y += 1;
+					player.position.x = enemy.position.x + sumR * cosf(atan2f(dy, ax));
+					player.position.y = enemy.position.y + sumR * sinf(atan2f(dy, ax));
+					float trackInnerDirection = -atan2f(0, ax);
+					//player.velocity.x = 5 * cosf(trackInnerDirection);
 
 			if (enemy.isDash)
 			{
@@ -952,21 +909,122 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 
+		static float smashFlashTimer = 0.0f;
+		// タイマー更新
+		smashFlashTimer += 1.0f;
+		if (smashFlashTimer >= 20.0f) smashFlashTimer = 0.0f;
 
+		// 剣が敵に当たったらゲージ増加
+		static bool wasHitLastFrame = false;
 
-		//camera
-		if (player.position.x < 300)
-		{
-			camera.x = 300 - player.position.x;
+		if (weapon1.isHit && weapon1.hitReady && !wasHitLastFrame) {
+			enemy.smashCharge += 20.0f;
+			if (enemy.smashCharge >= 200.0f) {   
+				enemy.smashCharge = 200.0f;  
+			}
+			weapon1.hitReady = false;
 		}
-		else if (player.position.x >= 300 && player.position.x <= 1000)
-		{
-			camera.x = 0;
+		wasHitLastFrame = weapon1.isHit;
+
+	
+		// 攻撃してないときは少しずつ減少
+		if (!(keys[DIK_J] && weapon1.state == 1 && weapon1.hitReady)) {
+			if (enemy.smashCharge > 0.0f) {  
+				enemy.smashCharge -= 0.05f;
+				if (enemy.smashCharge < 0.0f) enemy.smashCharge = 0.0f;
+			}
 		}
-		else if (player.position.x > 1000)
-		{
-			camera.x = 1000 - player.position.x;;
+
+		// クールダウン減少
+		if (enemy.smashCooldown > 0.0f) {
+			enemy.smashCooldown -= 1.0f;
 		}
+
+		if (enemy.smashCharge >= 199.9f && enemy.smashCooldown <= 0.0f) {  
+			enemy.smashCharge = 0.0f;
+			enemy.smashCooldown = 150.0f;
+		}
+		// スマッシュ中は敵の判定巨大化
+		float currentEnemyRadius = enemy.radius;
+		if (enemy.smashCooldown > 90.0f) {
+			currentEnemyRadius = 140.0f;
+		}
+
+		// 当たり判定
+		float dx_hit = player.position.x - enemy.position.x;
+		float dy_hit = player.position.y - enemy.position.y;
+		float distSq_hit = dx_hit * dx_hit + dy_hit * dy_hit;
+		float sumR_hit = player.radius + currentEnemyRadius;
+
+		if (distSq_hit <= sumR_hit * sumR_hit) {
+			player.isHit = true;
+			if (enemy.smashCooldown > 90.0f) {
+				player.velocity.x = 22.0f * (player.position.x > enemy.position.x ? 1.0f : -1.0f);
+				player.velocity.y = 35.0f;
+				player.isJump = true;
+			}
+			else if (enemy.isDash) {
+				player.velocity.x = 18.0f * (player.position.x > enemy.position.x ? 1.0f : -1.0f);
+				player.velocity.y = 30.0f;
+				player.isJump = true;
+			}
+		}
+
+				//camera
+				if (player.position.x < 300)
+				{
+					camera.x = 300 - player.position.x;
+				}
+				else if (player.position.x >= 300 && player.position.x <= 1000)
+				{
+					camera.x = 0;
+				}
+				else if (player.position.x > 1000)
+				{
+					camera.x = 1000 - player.position.x;;
+				}
+
+				if(player.health<=0 || enemy.health<=0)
+				{
+					inPhaseControll = 3;
+				}
+
+			}
+			else if (inPhaseControll == 3)
+			{
+				//outro
+				gamePhase = 3;
+				inPhaseControll = 0;
+			}
+		}
+		else if (gamePhase == 3)
+		{
+			if (inPhaseControll == 0)
+			{
+				//intro
+				inPhaseControll = 1;
+			}
+			else if (inPhaseControll == 1)
+			{
+				//setup
+				inPhaseControll = 2;
+			}
+			else if (inPhaseControll == 2)
+			{
+				//main
+				if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
+				{
+					inPhaseControll = 3;
+				}
+			}
+			else if (inPhaseControll == 3)
+			{
+				//outro
+				gamePhase = 1;
+				inPhaseControll = 0;
+			}
+		}
+
 
 		if (keys[DIK_F1] && !preKeys[DIK_F1])
 		{
@@ -979,94 +1037,121 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
+		if (gamePhase == 0)
+		{
+			if (inPhaseControll == 0)
+			{
+				
+			}
+			else if (inPhaseControll == 1)
+			{
+				
+			}
+			else if (inPhaseControll == 2)
+			{
+				
+			}
+			else if (inPhaseControll == 3)
+			{
+				
+			}
+		}
+		else if (gamePhase == 1)
+		{
+			if (inPhaseControll == 0)
+			{
 
-		Novice::DrawBox(static_cast<int>(camera.x), 0, 1280, 720, 0.0f, 0x87CEEBFF, kFillModeSolid); // sky
-		Novice::DrawSprite(0, 0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
-		//UI
-		//playerHP Bar
-		//int playerHp = 80;  //max=100
-		Novice::DrawBox(83, 99, player.health * 330 / 100, 26, 0.0f, RED, kFillModeSolid);
+			}
+			else if (inPhaseControll == 1)
+			{
+
+			}
+			else if (inPhaseControll == 2)
+			{
+
+			}
+			else if (inPhaseControll == 3)
+			{
+
+			}
+		}
+		else if (gamePhase == 2)
+		{
+			if (inPhaseControll == 0)
+			{
+
+			}
+			else if (inPhaseControll == 1)
+			{
+
+			}
+			else if (inPhaseControll == 2)
+			{
+				Novice::DrawBox(static_cast<int>(camera.x), 0, 1280, 720, 0.0f, 0x87CEEBFF, kFillModeSolid); // sky
+				Novice::DrawSprite(0, 0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
+				//UI
+				//playerHP Bar
+				//int playerHp = 80;  //max=100
+				Novice::DrawBox(83, 99, player.health * 330 / 100, 26, 0.0f, RED, kFillModeSolid);
 
 		//EnemyHP Bar
 		//enemy.health = 80;   //max=100
 		Novice::DrawBox(211, 19, enemy.health * 858 / 400, 26, 0.0f, RED, kFillModeSolid);
 
-		//weapon1 CD Bar
-		if (weapon1.flyTimer >= weapon1.flyTime)
-		{
-			Novice::DrawBox(106, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
-		}
-		else
-		{
-			Novice::DrawBox(106, 201, 27, (weapon1.flyTime - weapon1.flyTimer) * 84 / weapon1.flyTime, 0.0f, RED, kFillModeSolid);
-		}
-		Novice::DrawBox(126, 201, 7, weapon1.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
+				//weapon1 CD Bar
+				if (weapon1.flyTimer >= weapon1.flyTime)
+				{
+					Novice::DrawBox(106, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
+				}
+				else
+				{
+					Novice::DrawBox(106, 201, 27, (weapon1.flyTime - weapon1.flyTimer) * 84 / weapon1.flyTime, 0.0f, RED, kFillModeSolid);
+				}
+				Novice::DrawBox(126, 201, 7, weapon1.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
 
-		//weapon2 CD Bar
-		if (weapon2.flyTimer >= weapon2.flyTime)
-		{
-			Novice::DrawBox(186, 201, 28, 84, 0.0f, GREEN, kFillModeSolid);
-		}
-		else
-		{
-			Novice::DrawBox(186, 201, 28, (weapon2.flyTime - weapon2.flyTimer) * 84 / weapon2.flyTime, 0.0f, RED, kFillModeSolid);
-		}
-		Novice::DrawBox(206, 201, 8, weapon2.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
+				//weapon2 CD Bar
+				if (weapon2.flyTimer >= weapon2.flyTime)
+				{
+					Novice::DrawBox(186, 201, 28, 84, 0.0f, GREEN, kFillModeSolid);
+				}
+				else
+				{
+					Novice::DrawBox(186, 201, 28, (weapon2.flyTime - weapon2.flyTimer) * 84 / weapon2.flyTime, 0.0f, RED, kFillModeSolid);
+				}
+				Novice::DrawBox(206, 201, 8, weapon2.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
 
-		//weapon3 CD Bar
-		if (weapon3.flyTimer >= weapon3.flyTime)
-		{
-			Novice::DrawBox(266, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
-		}
-		else
-		{
-			Novice::DrawBox(266, 201, 27, (weapon3.flyTime - weapon3.flyTimer) * 84 / weapon3.flyTime, 0.0f, RED, kFillModeSolid);
-		}
+				//weapon3 CD Bar
+				if (weapon3.flyTimer >= weapon3.flyTime)
+				{
+					Novice::DrawBox(266, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
+				}
+				else
+				{
+					Novice::DrawBox(266, 201, 27, (weapon3.flyTime - weapon3.flyTimer) * 84 / weapon3.flyTime, 0.0f, RED, kFillModeSolid);
+				}
 
 
-		//player・enemy・bullet・weapon描画
-		if (player.isHit)
-		{
-			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
-		}
-		else
-		{
-			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
-		}
+				//player・enemy・bullet・weapon描画
+				if (player.isHit)
+				{
+					Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
+				}
+				else
+				{
+					Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
+				}
 
-		/*Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerWalkSprite.frame, 0, 80, 80,
-			playerWalkTexture,
-			0.5f, 1.0f, 0.0f, WHITE);
-		if (player.weapon == 0)
-		{
-			Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerW2Sprite.frame, 0, 80, 80,
-				playerW1Texture,
-				0.5f, 1.0f, 0.0f, WHITE);
-		}
-		else if (player.weapon == 1)
-		{
-			Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerW2Sprite.frame, 0, 80, 80,
-				playerW2Texture,
-				0.5f, 1.0f, 0.0f, WHITE);
-		}
-		else if (player.weapon == 2)
-		{
-			Novice::DrawSpriteRect(static_cast<int>(player.position.x - 32 + camera.x), static_cast<int>(player.position.y - 32), playerW3Sprite.frame, 0, 80, 80,
-				playerW3Texture,
-				0.5f, 1.0f, 0.0f, WHITE);
-		}*/
-
-		if (player.facing == 1)
-		{
-			playerFSprite.frame = (player.weapon+1) * 2 ;
-		}
-		else
-		{
-			playerFSprite.frame = (player.weapon + 1) *2 + 1;
-		}
-		Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame*96, 0, 96, 96,
-			playerFTexture,
-			0.125f, 1.0f, 0.0f, WHITE);
+				if (player.facing == 1)
+				{
+					playerFSprite.frame = (player.weapon + 1) * 2;
+				}
+				else
+				{
+					playerFSprite.frame = (player.weapon + 1) * 2 + 1;
+				}
+				Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+					playerFTexture,
+					0.125f, 1.0f, 0.0f, WHITE);
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -1107,6 +1192,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
 		Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
 
+			}
+		}
+		else if (gamePhase == 3)
+		{
+			if (inPhaseControll == 0)
+			{
+
+			}
+			else if (inPhaseControll == 1)
+			{
+
+			}
+			else if (inPhaseControll == 2)
+			{
+
+			}
+			else if (inPhaseControll == 3)
+			{
+
+			}
+		}
+
 
 		if (backEndData)
 		{
@@ -1114,6 +1221,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				Novice::ScreenPrintf(0, 30, "isJump");
 			}
+			Novice::ScreenPrintf(1000, 0, "gamePhase:%d  inPhaseControll:%d ", gamePhase, inPhaseControll);
 			Novice::ScreenPrintf(0, 0, "dashCooldown : %d", player.dashCoolTimer);
 			Novice::ScreenPrintf(0, 20, "dashTimer : %d", player.dashTimer);
 			Novice::ScreenPrintf(0, 50, "pattern : %d", enemy.attackPattern);
@@ -1127,7 +1235,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 210, "w3 timer : %d", weapon3.flyTimer);
 			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x, player.position.y);
 			Novice::ScreenPrintf(0, 430, "playerV x : %0.2f  y : %0.2f", player.velocity.x, player.velocity.y);
+			Novice::ScreenPrintf(0, 460, "SmashCharge: %.1f / 200.0", enemy.smashCharge);
+			if (enemy.smashCooldown > 90.0f) 
 			for (int i = 0; i < 3; i++)
+
 			{
 				Novice::ScreenPrintf(0, 480 + i * 20, "HIT bullet %d! health=%d", i, player.health);
 

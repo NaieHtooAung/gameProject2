@@ -161,7 +161,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{
 		bullet[i].position.x = -100.0f;
 		bullet[i].position.y = -100.0f;
-		bullet[i].radius = 16.0f;
+		bullet[i].radius = 32.0f;
 		bullet[i].speed = 10.0f;
 		bullet[i].isShot = false;
 
@@ -171,7 +171,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{
 		sb[i].position.x = rand() % 1230 + 50.0f;
 		sb[i].position.y = -100.0f;
-		sb[i].radius = 50.0f;
+		sb[i].radius = 64.0f;
 		sb[i].speed = 10;
 		sb[i].isFalling = false;
 	}
@@ -190,6 +190,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int playerW3Texture = Novice::LoadTexture("./Resource/image/playerW3.png");
 	//int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
+	int enemyAttackP2 = Novice::LoadTexture("./Resource/image/enemyAttackBall.png");
+	int enemyAttackP3 = Novice::LoadTexture("./Resource/image/spaceRock.png");
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -864,30 +866,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					sb[i].position.x = (float)(rand() % 1230 + 50);
 				}
 
-				// Collision with player
-				float dx = player.position.x - sb[i].position.x;
-				float dy = player.position.y - sb[i].position.y;
-				float distance = sqrtf(dx * dx + dy * dy);
-				float combinedRadius = player.radius + sb[i].radius;
-				if (distance < combinedRadius) {
-					// Hit detected
-					player.isDamage = true;
-					if (player.isDamage)
-					{
-						player.health -= 10;
-						// Immediately hide/disable this skyball
-						sb[i].isFalling = false;
-						sb[i].position.y = -100.0f;
-						sb[i].position.x = (float)(rand() % 1230 + 50);
-						player.isDamage = false;
-					}
-
-					// **Process damage logic here** (e.g., reduce player HP, play effect)
-
+				
+			}
+		}
+		for (int j = 0; j < 3; j++)
+		{
+			// Collision with player
+			float dx = player.position.x - sb[j].position.x;
+			float dy = player.position.y - sb[j].position.y;
+			float distance = sqrtf(dx * dx + dy * dy);
+			float combinedRadius = player.radius + sb[j].radius;
+			if (distance < combinedRadius) {
+				// Hit detected
+				player.isDamage = true;
+				if (player.isDamage)
+				{
+					player.health -= 10;
+					// Immediately hide/disable this skyball
+					sb[j].isFalling = false;
+					sb[j].position.y = -100.0f;
+					sb[j].position.x = (float)(rand() % 1230 + 50);
+					player.isDamage = false;
 				}
 			}
 		}
-
+	
 		for (int i = 0; i < 3; i++)
 		{
 			if (sb[i].isFalling && enemy.attackPattern != 3)
@@ -1049,7 +1052,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			if (sb[i].isFalling)
 			{
-				Novice::DrawEllipse(static_cast<int>(sb[i].position.x + camera.x), static_cast<int>(sb[i].position.y), (int)sb[i].radius, (int)sb[i].radius, 0.0f, 0x0000FFFF, kFillModeSolid);
+				Novice::DrawSprite((static_cast<int>(sb[i].position.x + camera.x) - 16), (static_cast<int>(sb[i].position.y) - 16),
+					enemyAttackP3,
+					2.0f, 2.0f, 0.0f, WHITE);
 			}
 		}
 		if (player.isDamage)
@@ -1061,9 +1066,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (bullet[i].isShot)
 			{
 
-				Novice::DrawEllipse((int)(bullet[i].position.x + camera.x), (int)bullet[i].position.y, (int)bullet[i].radius, (int)bullet[i].radius, 0.0f, 0xffffffff, kFillModeSolid);
-
-
+				Novice::DrawSprite(static_cast<int>(bullet[i].position.x + camera.x) - 16, static_cast<int>(bullet[i].position.y) - 16,
+					enemyAttackP2,
+					1.0f, 1.0f, 0.0f, WHITE);
 			}
 		}
 		Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);

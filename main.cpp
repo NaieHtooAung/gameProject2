@@ -40,6 +40,7 @@ typedef struct Enemy {
 	int patternTimer;
 	int patternCD;
 	float speed;
+	int speedDirection=1;
 	int dashTimer;
 	int dashCoolTimer;
 	int dashSpeed;
@@ -109,6 +110,12 @@ Sprite playerFSprite;
 Sprite enemySprite;
 
 int backEndData = true;
+
+//BIG TIMER
+clock_t start, end;
+double bigTimer = 0;
+int bigTimerPrint = 0;
+int bigTimerControll = 0;
 
 int gamePhase = 0; //0=title  1=tutorial  2=game  3=result  
 int inPhaseControll = 0; //0=intro  1=setup  2=main  3=outro
@@ -197,8 +204,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int playerFTexture = Novice::LoadTexture("./Resource/image/playerF.png");
 	int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
+	int titleBGTexture = Novice::LoadTexture("./Resource/image/title.png");
+	int tutorialBGTexture = Novice::LoadTexture("./Resource/image/tutorial.png");
+	int resultBGTexture = Novice::LoadTexture("./Resource/image/result.png");
 	int enemyAttackP2 = Novice::LoadTexture("./Resource/image/enemyAttackBall.png");
 	int enemyAttackP3 = Novice::LoadTexture("./Resource/image/spaceRock.png");
+
+
+	//數字圖像讀取
+	int numberGraphHandles[11];
+	numberGraphHandles[0] = Novice::LoadTexture("./Resource/image/number/number0.png");
+	numberGraphHandles[1] = Novice::LoadTexture("./Resource/image/number/number1.png");
+	numberGraphHandles[2] = Novice::LoadTexture("./Resource/image/number/number2.png");
+	numberGraphHandles[3] = Novice::LoadTexture("./Resource/image/number/number3.png");
+	numberGraphHandles[4] = Novice::LoadTexture("./Resource/image/number/number4.png");
+	numberGraphHandles[5] = Novice::LoadTexture("./Resource/image/number/number5.png");
+	numberGraphHandles[6] = Novice::LoadTexture("./Resource/image/number/number6.png");
+	numberGraphHandles[7] = Novice::LoadTexture("./Resource/image/number/number7.png");
+	numberGraphHandles[8] = Novice::LoadTexture("./Resource/image/number/number8.png");
+	numberGraphHandles[9] = Novice::LoadTexture("./Resource/image/number/number9.png");
+	//numberGraphHandles[10] = Novice::LoadTexture("./Resources/images/number/numberx.png");
+	int bigTimerX;
+	int bigTimerArray[6];
 
 	int opBgHandle1[3] = { Novice::LoadAudio("./Resource/audio/fireball.mp3"),
 							};
@@ -297,6 +324,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				//setup
 				inPhaseControll = 2;
+				start = clock();
 			}
 			else if (inPhaseControll == 2)
 			{
@@ -596,10 +624,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 				/// 敵の移動
 				enemySprite.frame = 0;
-				enemy.position.x += enemy.speed;
-				if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
+				enemy.position.x += enemy.speed*enemy.speedDirection;
+				if (enemy.position.x > player.position.x+500 )
 				{
-					enemy.speed *= -1;
+					enemy.speedDirection = -1;
+				}
+				if (enemy.position.x < player.position.x - 500)
+				{
+					enemy.speedDirection = 1;
 				}
 				if (enemy.patternCD >= 180)
 				{
@@ -691,7 +723,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				//	dy /= len;
 				//}
 
-						// If you only want horizontal (X axis) dash and maintain ground Y:
+								// If you only want horizontal (X axis) dash and maintain ground Y:
 						enemy.position.x += enemy.dashDirection * enemy.dashSpeed;
 						enemy.position.y = 640.0f;  // keeps Y fixed
 
@@ -705,20 +737,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 							//// After finishing dash, face player again for next charge
 
-					if (enemy.dashCount < enemy.maxDashCount) {
-						// start next charge
-						enemy.isCharging = true;
-						enemy.chargeTimer = 60;
+							if (enemy.dashCount < enemy.maxDashCount) {
+								// start next charge
+								enemy.isCharging = true;
+								enemy.chargeTimer = 60;
+							}
+							else {
+								// all dashes done → reset
+								enemy.dashCount = 0;
+								enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
+								enemy.attackPattern = 0;  // or next pattern
+							}
+						}
+						enemySprite.frame = 2;
 					}
-					else {
-						// all dashes done → reset
-						enemy.dashCount = 0;
-						enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
-						enemy.attackPattern = 0;  // or next pattern
-					}
-				}
-				enemySprite.frame = 2;
-			}
 			if (enemy.isDash)
 			{
 				float ax = player.position.x - enemy.position.x;
@@ -820,7 +852,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						Novice::StopAudio(playHandle1[i]);
 					}
 					// Optional: off-screen check → deactivate
-					if (bullet[i].position.x < 0 || bullet[i].position.x > 1280 ||
+					if (bullet[i].position.x+camera.x < 0 || bullet[i].position.x + camera.x > 1280 ||
 						bullet[i].position.y < 0 || bullet[i].position.y > 720) {
 						bullet[i].isShot = false;
 						continue;
@@ -850,7 +882,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						if (!sb[i].isFalling) {
 							sb[i].isFalling = true;
 							sb[i].position.y = -100.0f;      // start at top
-							sb[i].position.x = (float)(rand() % 1230 + 50);
+							sb[i].position.x = (float)(player.position.x+rand() % 1000 - 500);
 						}
 
 						// If falling, move it
@@ -873,9 +905,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 							sb[i].position.x = (float)(rand() % 1230 + 50);
 						}
 
-				
-			}
-		}
+
+					}
+					enemySprite.frame = 3;
+				}
 		for (int j = 0; j < 3; j++)
 		{
 			// Collision with player
@@ -897,7 +930,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					player.isDamage = false;
 				}
 			}
-			enemySprite.frame = 3;
+			
 		}
 	
 		for (int i = 0; i < 3; i++)
@@ -1011,22 +1044,37 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 				//camera
-				if (player.position.x < 300)
+				if (player.position.x < 500)
 				{
-					camera.x = 300 - player.position.x;
+					camera.x = 500 - player.position.x;
 				}
-				else if (player.position.x >= 300 && player.position.x <= 1000)
+				else if (player.position.x >= 500 && player.position.x <= 780)
 				{
 					camera.x = 0;
 				}
-				else if (player.position.x > 1000)
+				else if (player.position.x >780)
 				{
-					camera.x = 1000 - player.position.x;;
+					camera.x = 780 - player.position.x;;
 				}
 
 				if(player.health<=0 || enemy.health<=0)
 				{
 					inPhaseControll = 3;
+					end = clock();
+					bigTimer = end - start;
+					bigTimerPrint = static_cast<int>(bigTimer);
+					bigTimerX = bigTimerPrint;
+					bigTimerArray[0] = bigTimerX / 100000;
+					bigTimerX = bigTimerPrint % 100000;
+					bigTimerArray[1] = bigTimerX / 10000;
+					bigTimerX = bigTimerPrint % 10000;
+					bigTimerArray[2] = bigTimerX / 1000;
+					bigTimerX = bigTimerPrint % 1000;
+					bigTimerArray[3] = bigTimerX / 100;
+					bigTimerX = bigTimerPrint % 100;
+					bigTimerArray[4] = bigTimerX / 10;
+					bigTimerX = bigTimerPrint % 10;
+					bigTimerArray[5] = bigTimerX;
 				}
 
 			}
@@ -1047,6 +1095,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (inPhaseControll == 1)
 			{
 				//setup
+				player.health = 100;
+				enemy.health = 400;
+				player.position.x = 320.0f;
+				player.position.y = 640.0f;
+				enemy.position.x = 840.0f;
+				enemy.position.y = 640.0f;
 				inPhaseControll = 2;
 			}
 			else if (inPhaseControll == 2)
@@ -1095,6 +1149,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				
 			}
+			Novice::DrawSprite(0, 0, titleBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 		}
 		else if (gamePhase == 1)
 		{
@@ -1114,6 +1169,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 
 			}
+			Novice::DrawSprite(0, 0, tutorialBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 		}
 		else if (gamePhase == 2)
 		{
@@ -1236,6 +1292,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		else if (gamePhase == 3)
 		{
+			Novice::DrawSprite(0, 0, resultBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 			if (inPhaseControll == 0)
 			{
 
@@ -1252,6 +1309,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 
 			}
+			
+			if (bigTimerArray[0] != 0)
+			{
+				Novice::DrawSprite(
+					836, 620, numberGraphHandles[bigTimerArray[0]],
+					1.0f, 1.0f, 0.0, WHITE
+				);
+			}
+			Novice::DrawSprite(
+				872, 620, numberGraphHandles[bigTimerArray[1]],
+				1.0f, 1.0f, 0.0, WHITE
+			);
+			Novice::DrawSprite(
+				918, 620, numberGraphHandles[bigTimerArray[2]],
+				1.0f, 1.0f, 0.0, WHITE
+			);
+			Novice::DrawSprite(
+				990, 620, numberGraphHandles[bigTimerArray[3]],
+				1.0f, 1.0f, 0.0, WHITE
+			);
+			Novice::DrawSprite(
+				1036, 620, numberGraphHandles[bigTimerArray[4]],
+				1.0f, 1.0f, 0.0, WHITE
+			);
 		}
 
 
@@ -1283,6 +1364,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				Novice::ScreenPrintf(0, 480 + i * 20, "HIT bullet %d! health=%d", i, player.health);
 
 			}
+			
+			Novice::ScreenPrintf(0, 600, "BigTimer%d", bigTimerPrint);
 
 		}
 		///

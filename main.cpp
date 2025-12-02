@@ -40,6 +40,7 @@ typedef struct Enemy {
 	int patternTimer;
 	int patternCD;
 	float speed;
+	int speedDirection=1;
 	int dashTimer;
 	int dashCoolTimer;
 	int dashSpeed;
@@ -608,10 +609,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 				/// 敵の移動
 				enemySprite.frame = 0;
-				enemy.position.x += enemy.speed;
-				if (enemy.position.x > 1280.0f || enemy.position.x < 0.0f)
+				enemy.position.x += enemy.speed*enemy.speedDirection;
+				if (enemy.position.x > player.position.x+500 )
 				{
-					enemy.speed *= -1;
+					enemy.speedDirection = -1;
+				}
+				if (enemy.position.x < player.position.x - 500)
+				{
+					enemy.speedDirection = 1;
 				}
 				if (enemy.patternCD >= 180)
 				{
@@ -672,38 +677,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						enemy.position.y = 640.0f;    // maintain ground Y
 						enemySprite.frame = 1;
 
-				if (enemy.chargeTimer <= 0) {
-					// Charge ends → start dash
-					enemy.isCharging = false;
-					enemy.isDash = true;
-					enemy.dashTimer = enemy.dashTimerInitial;
-					
-					// **Lock the target position at dash‐start**
-					enemy.dashTargetPosition.x = player.position.x;
-					enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters
-					if (enemy.dashTargetPosition.x > enemy.position.x) {
-						enemy.dashDirection = 1;
-					}
-					else {
-						enemy.dashDirection = -1;
-					}
-				}
-				
-			}
-			else if (enemy.isDash) {
-				enemy.dashCoolTimer--;
-				
-				
-				// Compute direction vector toward the locked target
-				//float dx = enemy.dashTargetPosition.x - enemy.position.x;
-				//float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
-				//float len = sqrtf(dx * dx + dy * dy);
-				//if (len != 0.0f) {
-				//	dx /= len;
-				//	dy /= len;
-				//}
+						if (enemy.chargeTimer <= 0) {
+							// Charge ends → start dash
+							enemy.isCharging = false;
+							enemy.isDash = true;
+							enemy.dashTimer = enemy.dashTimerInitial;
 
-						// If you only want horizontal (X axis) dash and maintain ground Y:
+							// **Lock the target position at dash‐start**
+							enemy.dashTargetPosition.x = player.position.x;
+							enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters
+							if (enemy.dashTargetPosition.x > enemy.position.x) {
+								enemy.dashDirection = 1;
+							}
+							else {
+								enemy.dashDirection = -1;
+							}
+						}
+
+					}
+					else if (enemy.isDash) {
+						enemy.dashCoolTimer--;
+
+
+						// Compute direction vector toward the locked target
+						//float dx = enemy.dashTargetPosition.x - enemy.position.x;
+						//float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
+						//float len = sqrtf(dx * dx + dy * dy);
+						//if (len != 0.0f) {
+						//	dx /= len;
+						//	dy /= len;
+						//}
+
+								// If you only want horizontal (X axis) dash and maintain ground Y:
 						enemy.position.x += enemy.dashDirection * enemy.dashSpeed;
 						enemy.position.y = 640.0f;  // keeps Y fixed
 
@@ -717,20 +722,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 							//// After finishing dash, face player again for next charge
 
-					if (enemy.dashCount < enemy.maxDashCount) {
-						// start next charge
-						enemy.isCharging = true;
-						enemy.chargeTimer = 60;
+							if (enemy.dashCount < enemy.maxDashCount) {
+								// start next charge
+								enemy.isCharging = true;
+								enemy.chargeTimer = 60;
+							}
+							else {
+								// all dashes done → reset
+								enemy.dashCount = 0;
+								enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
+								enemy.attackPattern = 0;  // or next pattern
+							}
+						}
+						enemySprite.frame = 2;
 					}
-					else {
-						// all dashes done → reset
-						enemy.dashCount = 0;
-						enemy.dashCoolTimer = enemy.dashCoolTimerInitial;
-						enemy.attackPattern = 0;  // or next pattern
-					}
-				}
-				enemySprite.frame = 2;
-			}
 			if (enemy.isDash)
 			{
 				float ax = player.position.x - enemy.position.x;
@@ -821,7 +826,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					bullet[i].position.y += bullet[i].velSaveY;
 
 					// Optional: off-screen check → deactivate
-					if (bullet[i].position.x < 0 || bullet[i].position.x > 1280 ||
+					if (bullet[i].position.x+camera.x < 0 || bullet[i].position.x + camera.x > 1280 ||
 						bullet[i].position.y < 0 || bullet[i].position.y > 720) {
 						bullet[i].isShot = false;
 						continue;
@@ -849,7 +854,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						if (!sb[i].isFalling) {
 							sb[i].isFalling = true;
 							sb[i].position.y = -100.0f;      // start at top
-							sb[i].position.x = (float)(rand() % 1230 + 50);
+							sb[i].position.x = (float)(player.position.x+rand() % 1000 - 500);
 						}
 
 						// If falling, move it
@@ -864,9 +869,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 							sb[i].position.x = (float)(rand() % 1230 + 50);
 						}
 
-				
-			}
-		}
+
+					}
+					enemySprite.frame = 3;
+				}
 		for (int j = 0; j < 3; j++)
 		{
 			// Collision with player
@@ -887,7 +893,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					player.isDamage = false;
 				}
 			}
-			enemySprite.frame = 3;
+			
 		}
 	
 		for (int i = 0; i < 3; i++)
@@ -998,17 +1004,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 				//camera
-				if (player.position.x < 300)
+				if (player.position.x < 500)
 				{
-					camera.x = 300 - player.position.x;
+					camera.x = 500 - player.position.x;
 				}
-				else if (player.position.x >= 300 && player.position.x <= 1000)
+				else if (player.position.x >= 500 && player.position.x <= 780)
 				{
 					camera.x = 0;
 				}
-				else if (player.position.x > 1000)
+				else if (player.position.x >780)
 				{
-					camera.x = 1000 - player.position.x;;
+					camera.x = 780 - player.position.x;;
 				}
 
 				if(player.health<=0 || enemy.health<=0)
@@ -1049,6 +1055,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (inPhaseControll == 1)
 			{
 				//setup
+				player.health = 100;
+				enemy.health = 400;
+				player.position.x = 320.0f;
+				player.position.y = 640.0f;
+				enemy.position.x = 840.0f;
+				enemy.position.y = 640.0f;
 				inPhaseControll = 2;
 			}
 			else if (inPhaseControll == 2)

@@ -162,7 +162,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	enemy.attackPattern = rand() % 3 + 1;
 	enemy.patternChange = true;
 
-	Bullet bullet[3];
+	Bullet bullet[12];
 	for (int i = 0; i < 3; i++)
 	{
 		bullet[i].position.x = -100.0f;
@@ -177,7 +177,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{
 		sb[i].position.x = rand() % 1230 + 50.0f;
 		sb[i].position.y = -100.0f;
-		sb[i].radius = 64.0f;
+		sb[i].radius = 32.0f;
 		sb[i].speed = 10;
 		sb[i].isFalling = false;
 	}
@@ -199,6 +199,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
 	int enemyAttackP2 = Novice::LoadTexture("./Resource/image/enemyAttackBall.png");
 	int enemyAttackP3 = Novice::LoadTexture("./Resource/image/spaceRock.png");
+
+	int opBgHandle1[3] = { Novice::LoadAudio("./Resource/audio/fireball.mp3"),
+							};
+	int playHandle1[3] = { -1 };
+	int opBgHandle2= 
+		Novice::LoadAudio("./Resource/audio/fireballHit.mp3");
+	int playHandle2= -1;
+	int opBgHandle3[3] = { Novice::LoadAudio("./Resource/audio/spaceRock.mp3"),
+							Novice::LoadAudio("./Resource/audio/spaceRock.mp3"), 
+							Novice::LoadAudio("./Resource/audio/spaceRock.mp3") };
+	int playHandle3[3] = { -1 };
+	int opBgHandle4 = Novice::LoadAudio("./Resource/audio/spaceRHit.mp3");
+	int playHandle4 = -1;
+	int opBgHandle5 = Novice::LoadAudio("./Resource/audio/smash.mp3");
+	int opBgHandle6 = Novice::LoadAudio("./Resource/audio/dash.mp3");
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -650,7 +665,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemy.isCharging = false;
 					enemy.isDash = true;
 					enemy.dashTimer = enemy.dashTimerInitial;
-					
+					Novice::PlayAudio(opBgHandle6, 0, 0.2f);
 					// **Lock the target position at dash‐start**
 					enemy.dashTargetPosition.x = player.position.x;
 					enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters
@@ -752,6 +767,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 								if (!bullet[i].isShot) {
 									// initialize bullet for new shot
 									bullet[i].isShot = true;
+									if (bullet[i].isShot)
+									{
+										if (!Novice::IsPlayingAudio(opBgHandle1[i]))
+										{
+											playHandle1[i] = Novice::PlayAudio(opBgHandle1[i], 0, 0.2f);
+										}
+									}
 									bullet[i].isHit = false;                 // reset hit flag
 									bullet[i].position = enemy.position;      // spawn at enemy (or shooter) pos
 									// compute normalized direction to player
@@ -766,10 +788,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 									bullet[i].velY = dy * bullet[i].speed;
 									bullet[i].velSaveX = bullet[i].velX;
 									bullet[i].velSaveY = bullet[i].velY;
+									
 									break;  // spawn one bullet per call
 								}
 							}
-
+							
 
 							shotCount--;
 							shotTimer = delayBetweenShots;
@@ -792,7 +815,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					// Move bullet
 					bullet[i].position.x += bullet[i].velSaveX;
 					bullet[i].position.y += bullet[i].velSaveY;
-
+					if (Novice::IsPlayingAudio(opBgHandle1[i]))
+					{
+						Novice::StopAudio(playHandle1[i]);
+					}
 					// Optional: off-screen check → deactivate
 					if (bullet[i].position.x < 0 || bullet[i].position.x > 1280 ||
 						bullet[i].position.y < 0 || bullet[i].position.y > 720) {
@@ -804,10 +830,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					float dx = player.position.x - bullet[i].position.x;
 					float dy = player.position.y - bullet[i].position.y;
 					float distSq = dx * dx + dy * dy;
-					float radiusSum = player.radius + bullet[i].radius;
+					float radiusSum = player.radius + bullet[i].radius - 30;
 
 					if (distSq <= radiusSum * radiusSum) {
 						// Hit detected — apply damage
+						bullet[i].isHit = true;
+						playHandle2 = Novice::PlayAudio(opBgHandle2, 0, 0.2f);
 						player.health -= 5;
 						if (player.health < 0) player.health = 0;
 
@@ -827,12 +855,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 						// If falling, move it
 						if (sb[i].isFalling) {
+							if (!Novice::IsPlayingAudio(playHandle3[i]))
+							{
+								playHandle3[i] = Novice::PlayAudio(opBgHandle3[i], 0, 0.2f);
+							}
 							sb[i].position.y += sb[i].speed;
 						}
 
 						// If it exits screen, reset it
 						if (sb[i].position.y > 720) {
 							sb[i].isFalling = false;
+							if (Novice::IsPlayingAudio(playHandle3[i]))
+							{
+								Novice::StopAudio(playHandle3[i]);
+							}
 							sb[i].position.y = -100.0f;
 							sb[i].position.x = (float)(rand() % 1230 + 50);
 						}
@@ -847,12 +883,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			float dy = player.position.y - sb[j].position.y;
 			float distance = sqrtf(dx * dx + dy * dy);
 			float combinedRadius = player.radius + sb[j].radius;
-			if (distance < combinedRadius) {
+			if (distance < combinedRadius + 10) {
 				// Hit detected
 				player.isDamage = true;
 				if (player.isDamage)
 				{
 					player.health -= 10;
+					playHandle4 = Novice::PlayAudio(opBgHandle4, 0, 0.2f);
 					// Immediately hide/disable this skyball
 					sb[j].isFalling = false;
 					sb[j].position.y = -100.0f;
@@ -880,7 +917,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				float ax = player.position.x - enemy.position.x;
 				float dy = player.position.y - enemy.position.y;
 				float distSq = ax * ax + dy * dy;
-				float sumR = player.radius + enemy.radius;
+				float sumR = player.radius + enemy.radius ;
 				if (distSq <= sumR * sumR) {
 					player.isHit = true;
 
@@ -958,12 +995,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		if (distSq_hit <= sumR_hit * sumR_hit) {
 			player.isHit = true;
+			
 			if (enemy.smashCooldown > 90.0f) {
+				Novice::PlayAudio(opBgHandle5, 0, 0.2f);
 				player.velocity.x = 22.0f * (player.position.x > enemy.position.x ? 1.0f : -1.0f);
 				player.velocity.y = 35.0f;
 				player.isJump = true;
 			}
 			else if (enemy.isDash) {
+				
 				player.velocity.x = 18.0f * (player.position.x > enemy.position.x ? 1.0f : -1.0f);
 				player.velocity.y = 30.0f;
 				player.isJump = true;
@@ -1157,7 +1197,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			if (sb[i].isFalling)
 			{
-				Novice::DrawSprite((static_cast<int>(sb[i].position.x + camera.x) - 16), (static_cast<int>(sb[i].position.y) - 16),
+				Novice::DrawSprite((static_cast<int>(sb[i].position.x + camera.x)- 40), (static_cast<int>(sb[i].position.y)-30),
 					enemyAttackP3,
 					2.0f, 2.0f, 0.0f, WHITE);
 			}

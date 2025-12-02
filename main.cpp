@@ -241,6 +241,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int playHandle4 = -1;
 	int opBgHandle5 = Novice::LoadAudio("./Resource/audio/smash.mp3");
 	int opBgHandle6 = Novice::LoadAudio("./Resource/audio/dash.mp3");
+	int playHandle6 = -1;
+	int opBgHandle7 = Novice::LoadAudio("./Resource/audio/enemyDash.mp3");
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -358,6 +360,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 				if (player.isDash)
 				{
+					if (!Novice::IsPlayingAudio(playHandle6))
+					{
+						playHandle6 = Novice::PlayAudio(opBgHandle6, 0, 0.2f);
+					}
+					
 					player.dashCoolTimer--;
 					if (player.dashCoolTimer >= player.dashCoolTime - player.dashTime)
 					{
@@ -374,6 +381,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				{
 					player.dashTimer = player.dashTime;
 					player.dashCoolTimer = player.dashCoolTime;
+					if (Novice::IsPlayingAudio(playHandle6))
+					{
+						Novice::StopAudio(playHandle6);
+					}
 					player.isDash = false;
 
 				}
@@ -697,7 +708,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemy.isCharging = false;
 					enemy.isDash = true;
 					enemy.dashTimer = enemy.dashTimerInitial;
-					Novice::PlayAudio(opBgHandle6, 0, 0.2f);
+					Novice::PlayAudio(opBgHandle7, 0, 0.2f);
 					// **Lock the target position at dash‐start**
 					enemy.dashTargetPosition.x = player.position.x;
 					enemy.dashTargetPosition.y = player.position.y;  // you may ignore Y if only X matters

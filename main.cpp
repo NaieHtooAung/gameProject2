@@ -252,7 +252,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int opBgHandle12 = Novice::LoadAudio("./Resource/audio/win.mp3");
 	int playHandle12 = -1;
 	int opBgHandle13 = Novice::LoadAudio("./Resource/audio/jump.mp3");
-	
+	int opBgHandle14 = Novice::LoadAudio("./Resource/audio/sword.mp3");
+	int opBgHandle15 = Novice::LoadAudio("./Resource/audio/arrow.mp3");
+	int opBgHandle16 = Novice::LoadAudio("./Resource/audio/boomerang.mp3");
+	int playHandle16 = -1;
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -440,6 +443,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 				if (!keys[DIK_J] && preKeys[DIK_J])
 				{
+					
+						Novice::PlayAudio(opBgHandle14, 0, 0.5f);
 					player.weapon = 0;
 					if (weapon1.state == 0)
 					{
@@ -464,6 +469,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 				else if (weapon1.state == 1)
 				{
+					
 					weapon1.flyTimer -= 1;
 					if (weapon1.isHit)//敵を命中したら
 					{
@@ -512,6 +518,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						weapon2.facing = player.facing;
 						weapon2.hitReady = true;
 					}
+					if (weapon2.hitReady && weapon2.flyTimer > 0)
+					{
+						Novice::PlayAudio(opBgHandle15, 0, 0.5f);
+					}
+
 				}
 
 				if (weapon2.state == 0)
@@ -569,9 +580,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				/// 武器3(ブーメラン)
 				if (keys[DIK_L] && !preKeys[DIK_L])
 				{
+					if (!Novice::IsPlayingAudio(playHandle16))
+					{
+						playHandle16 = Novice::PlayAudio(opBgHandle16, 0, 0.5f);
+					}
+				
+					
 					player.weapon = 2;
 					if (weapon3.state == 0)
 					{
+						
 						weapon3.position.x = player.position.x;
 						weapon3.position.y = player.position.y;
 						weapon3.velosity.x = 30.0f * player.facing;
@@ -579,14 +597,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						weapon3.facing = player.facing;
 						weapon3.hitReady = true;
 					}
+					
 				}
 
 				if (weapon3.state == 0)
 				{
+					
+					
 					//待機中は特に処理なし
 				}
 				else if (weapon3.state == 1)
 				{
+						
 					weapon3.flyTimer -= 1;
 					weapon3.velosity.x -= weapon3.facing;
 					if (weapon3.velosity.x * weapon3.facing < 0)
@@ -643,8 +665,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					weapon3.state = 0;
 					weapon3.flyTimer = weapon3.flyTime;
 					weapon3.position.y = -100.0f;
+					Novice::StopAudio(playHandle16);
 				}
-
+				
 
 				/// 敵の移動
 				enemySprite.frame = 0;
@@ -1191,6 +1214,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		else if (gamePhase == 1)
 		{
+			Novice::StopAudio(playHandle16);
 			if (!Novice::IsPlayingAudio(playHandle8))
 			{
 				playHandle8 = Novice::PlayAudio(opBgHandle8, 1, 0.5f);
@@ -1343,6 +1367,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else if (gamePhase == 3)
 		{
 			Novice::StopAudio(playHandle9);
+			Novice::StopAudio(playHandle16);
 			if (player.health <= 0)
 			{
 				Novice::PlayAudio(opBgHandle11, 0, 0.5f);

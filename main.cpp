@@ -1362,9 +1362,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
 		}
-		Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 48 + camera.x), static_cast<int>(enemy.position.y - 32), enemySprite.frame * 128, 0, 128, 128,
+		if(enemy.direction>0)
+		{
+			enemySprite.frame *= 2;
+			enemySprite.frame += 1;
+		}
+		else
+		{
+			enemySprite.frame *= 2;
+		}
+		Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
 			enemyTexture,
-			0.25f, 1.0f, 0.0f, WHITE);
+			0.125f, 1.0f, 0.0f, WHITE);
 		//Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
 		
 		if(weapon3.textureFrame >7)

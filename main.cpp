@@ -118,7 +118,7 @@ Sprite playerW3Sprite;
 Sprite playerFSprite;
 Sprite enemySprite;
 
-int backEndData = true;
+int backEndData = false;
 
 //BIG TIMER
 clock_t start, end;
@@ -215,12 +215,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
 	int titleBGTexture = Novice::LoadTexture("./Resource/image/title.png");
 	int tutorialBGTexture = Novice::LoadTexture("./Resource/image/tutorial.png");
-	int resultBGTexture = Novice::LoadTexture("./Resource/image/result.png");
+	int resultBGTexture = Novice::LoadTexture("./Resource/image/win.png");
 	int enemyAttackP2 = Novice::LoadTexture("./Resource/image/enemyAttackBall.png");
 	int enemyAttackP3 = Novice::LoadTexture("./Resource/image/spaceRock.png");
 	int resultTimerTexture = Novice::LoadTexture("./Resource/image/resultTimer.png");
 	int loseTexture = Novice::LoadTexture("./Resource/image/lose.png");
-	int forestTexture = Novice::LoadTexture("./Resource/image/forestDEMO.jpeg");
+	int forestTexture = Novice::LoadTexture("./Resource/image/forest.png");
 
 
 	//數字圖像讀取
@@ -1206,10 +1206,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (inPhaseControll == 1)
 			{
 				//setup
-				player.position.x = 320.0f;
-				player.position.y = 640.0f;
-				enemy.position.x = 840.0f;
-				enemy.position.y = 640.0f;
 				inPhaseControll = 2;
 			}
 			else if (inPhaseControll == 2)
@@ -1230,8 +1226,111 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else if (inPhaseControll == 3)
 			{
+				player.position.x = 320.0f;
+				player.position.y = 640.0f;
+				player.radius = 32.0f;
 				player.health = 100;
-				enemy.health = 0;
+				player.speed = 5.0f;
+				player.weapon = -1; // 0:剣 1:弓 2:標
+				player.facing = 1;
+				player.dashCoolTimer = 60;
+				player.dashTimer = 15;
+				player.dashSpeed = 30;
+				player.velocity.y = 20;
+				player.velocity.x = 0;
+				player.isJump = false;
+				player.isDash = false;
+				player.isHit = false;
+				player.isDamage = false;
+
+				enemy.position.x = 840.0f;
+				enemy.position.y = -200.0f;
+				enemy.radius = 64.0f;
+				enemy.health = 400;
+				enemy.speed = 3.0f;
+				enemy.speedInitial = enemy.speed;  // store initial
+				enemy.patternTimer = 180;
+				enemy.patternCD = 180;
+				enemy.dashTargetPosition.x = 0.0f;
+				enemy.dashTargetPosition.y = 0.0f;
+				enemy.dashCoolTimer = 90;
+				enemy.dashCoolTimerInitial = enemy.dashCoolTimer; // store initial
+				enemy.dashTimer = 15;
+				enemy.dashTimerInitial = enemy.dashTimer; // store initial
+				enemy.dashSpeed = 40;
+				enemy.dashCount = 0;
+				enemy.maxDashCount = 2;
+				enemy.direction = 0;
+				enemy.dashDirection = 0;
+				enemy.chargeTimer = 60;     // e.g., 60 frames charging
+				enemy.isCharging = false;
+				enemy.isDash = false;
+				enemy.attackPattern = rand() % 3 + 1;
+				enemy.patternChange = true;
+
+				weapon1.position = { -100,-100 };
+				weapon1.velosity = { 0,0 };
+				weapon1.state = 0; // 0:待機 1:飛翔 2:帰還
+				weapon1.facing = 1;
+				weapon1.charge = 0;
+				weapon1.isHit = 0;
+				weapon1.hitReady = false;
+				weapon1.textureFrame = 0;
+				weapon1.textureTime = 15;
+				weapon1.textureTimer = 0;
+
+				weapon2.position = { -100,-100 };
+				weapon2.velosity = { 0,0 };
+				weapon2.state = 0; // 0:待機 1:飛翔 2:帰還
+				weapon2.facing = 1;
+				weapon2.charge = 0;
+				weapon2.isHit = 0;
+				weapon2.hitReady = false;
+				weapon2.textureFrame = 0;
+				weapon2.textureTime = 15;
+				weapon2.textureTimer = 0;
+
+				weapon3.position = { -100,-100 };
+				weapon3.velosity = { 0,0 };
+				weapon3.state = 0; // 0:待機 1:飛翔 2:帰還
+				weapon3.facing = 1;
+				weapon3.charge = 0;
+				weapon3.isHit = 0;
+				weapon3.hitReady = false;
+				weapon3.textureFrame = 0;
+				weapon3.textureTime = 15;
+				weapon3.textureTimer = 0;
+
+				weapon1.flyTimer = weapon1.flyTime;
+				weapon2.flyTimer = weapon2.flyTime;
+				weapon3.flyTimer = weapon3.flyTime;
+
+				camera.x = 640 - (player.position.x + enemy.position.x) / 2;
+
+				for (int i = 0; i < 3; i++)
+				{
+					bullet[i].position.x = -100.0f;
+					bullet[i].position.y = -100.0f;
+					bullet[i].radius = 32.0f;
+					bullet[i].speed = 10.0f;
+					bullet[i].isShot = false;
+
+				}
+				
+				for (int i = 0; i < 3; i++)
+				{
+					sb[i].position.x = rand() % 1230 + 50.0f;
+					sb[i].position.y = -100.0f;
+					sb[i].radius = 32.0f;
+					sb[i].speed = 10;
+					sb[i].isFalling = false;
+				}
+
+				phase2introActTimer = 360;
+				enemyIsHitPresent = 0;
+				enemyIsHitTimer = 0;
+				playerIsHitPresent = 0;
+				playerIsHitTimer = 0;
 				//outro
 				gamePhase = 1;
 				inPhaseControll = 0;
@@ -1500,10 +1599,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						W1Texture,
 						0.5f, 1.0f, 0.0f, WHITE);
 				}
-
-				Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
-
-		
 			}
 
 			
@@ -1652,6 +1747,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x, player.position.y);
 			Novice::ScreenPrintf(0, 430, "playerV x : %0.2f  y : %0.2f", player.velocity.x, player.velocity.y);
 			Novice::ScreenPrintf(0, 460, "SmashCharge: %.1f / 200.0", enemy.smashCharge);
+			Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
 			if (enemy.smashCooldown > 90.0f) 
 			for (int i = 0; i < 3; i++)
 

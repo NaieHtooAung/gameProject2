@@ -11,6 +11,11 @@ typedef struct Vector2 {
 } Vector2;
 
 Vector2 camera;
+int BG1;
+int BG2;
+int BG3;
+int BG4;
+
 
 typedef struct Player {
 	Vector2 position;
@@ -82,7 +87,7 @@ typedef struct SkyBall {
 
 struct Weapon
 {
-	Vector2 position = { -100,-100 };
+	Vector2 position = { -100,-100 }  ;
 	Vector2 velosity;
 	int state = 0; // 0:待機 1:飛翔 2:帰還
 	int facing = 1;
@@ -215,6 +220,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int enemyAttackP3 = Novice::LoadTexture("./Resource/image/spaceRock.png");
 	int resultTimerTexture = Novice::LoadTexture("./Resource/image/resultTimer.png");
 	int loseTexture = Novice::LoadTexture("./Resource/image/lose.png");
+	int forestTexture = Novice::LoadTexture("./Resource/image/forestDEMO.jpeg");
 
 
 	//數字圖像讀取
@@ -1297,6 +1303,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else if (gamePhase == 2)
 		{
 			Novice::DrawBox(static_cast<int>(camera.x), 0, 1280, 720, 0.0f, 0x87CEEBFF, kFillModeSolid); // sky
+
+			BG1 = -(int)(camera.x-640) /1280*1280;
+			BG2 = BG1 -1280;
+			BG4 = BG1 +1280;
+			BG3 = BG2 - 1280;
+			Novice::DrawSprite((int)(BG1 + camera.x), (int)(0 + camera.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite((int)(BG2 + camera.x), (int)(0 + camera.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite((int)(BG3 + camera.x), (int)(0 + camera.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite((int)(BG4 + camera.x), (int)(0 + camera.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
 			Novice::DrawSprite(0, 0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
 			//UI
 			//playerHP Bar
@@ -1622,6 +1637,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				Novice::ScreenPrintf(0, 30, "isJump");
 			}
 			Novice::ScreenPrintf(1000, 0, "gamePhase:%d  inPhaseControll:%d ", gamePhase, inPhaseControll);
+			Novice::ScreenPrintf(1000,70, "BG1.x:%d   ", BG1);
 			Novice::ScreenPrintf(0, 0, "dashCooldown : %d", player.dashCoolTimer);
 			Novice::ScreenPrintf(0, 20, "dashTimer : %d", player.dashTimer);
 			Novice::ScreenPrintf(0, 50, "pattern : %d", enemy.attackPattern);

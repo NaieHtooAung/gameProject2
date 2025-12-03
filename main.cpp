@@ -91,6 +91,10 @@ struct Weapon
 	int charge = 0;
 	int isHit = 0;
 	int hitReady = false;
+
+	int textureFrame = 0;
+	int textureTime = 15;
+	int textureTimer = 0;
 };
 Weapon weapon1;
 Weapon weapon2;
@@ -197,10 +201,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	weapon3.flyTimer = 90;
 
 	//imageResourceLoad();
-	/*int playerWalkTexture = Novice::LoadTexture("./Resource/image/playerWalk.png");
-	int playerW1Texture = Novice::LoadTexture("./Resource/image/playerW1.png");
-	int playerW2Texture = Novice::LoadTexture("./Resource/image/playerW2.png");
-	int playerW3Texture = Novice::LoadTexture("./Resource/image/playerW3.png");*/
+	//int playerWalkTexture = Novice::LoadTexture("./Resource/image/playerWalk.png");
+	int W1Texture = Novice::LoadTexture("./Resource/image/w1.png");
+	int W2Texture = Novice::LoadTexture("./Resource/image/w2.png");
+	int W3Texture = Novice::LoadTexture("./Resource/image/w3A.png");
 	int playerFTexture = Novice::LoadTexture("./Resource/image/playerF.png");
 	int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
@@ -447,7 +451,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						weapon1.position.y = player.position.y;
 						weapon1.state = 1;
 						weapon1.facing = player.facing;
-						weapon1.hitReady = true;
+						weapon1.hitReady = true; 
+						weapon1.textureTimer = 0;
 					}
 				}
 
@@ -479,6 +484,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 				}
 
+				if (weapon1.textureTimer < weapon1.textureTime)
+				{
+					weapon1.textureTimer += 1;
+				}
 				//W1当たり判定
 				float w1eDistX = enemy.position.x - weapon1.position.x;
 				float w1eDistY = enemy.position.y - weapon1.position.y;
@@ -510,9 +519,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						weapon2.velosity.y = -5;
 						weapon2.state = 1;
 						weapon2.facing = player.facing;
-						weapon2.hitReady = true;
+						weapon2.hitReady = true; 
 					}
 				}
+				
+				
 
 				if (weapon2.state == 0)
 				{
@@ -599,7 +610,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						weapon3.hitReady = false;
 						enemy.health -= 5;
 					}
-
+					weapon3.textureFrame += 1;
 				}
 				else if (weapon3.state == 2)
 				{
@@ -609,13 +620,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					{
 						weapon3.state = 0;
 						weapon3.flyTimer = weapon3.flyTime;
+						weapon3.textureFrame = 0;
 					}
 					if (weapon3.isHit)
 					{
 						weapon3.hitReady = false;
 						enemy.health -= 5;
 					}
-
+					weapon3.textureFrame += 1;
 				}
 				weapon3.position.x += weapon3.velosity.x;
 				weapon3.position.y += weapon3.velosity.y;
@@ -642,7 +654,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				{
 					weapon3.state = 0;
 					weapon3.flyTimer = weapon3.flyTime;
-					weapon3.position.y = -100.0f;
+					weapon3.position.y = -100.0f; 
+					weapon3.textureFrame = 0;
 				}
 
 
@@ -1334,9 +1347,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 48 + camera.x), static_cast<int>(enemy.position.y - 32), enemySprite.frame * 128, 0, 128, 128,
 			enemyTexture,
 			0.25f, 1.0f, 0.0f, WHITE);
-		Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
-		Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
-		Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
+		//Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
+		
+		if(weapon3.textureFrame >7)
+		{
+			weapon3.textureFrame = 0;
+		}
+		Novice::DrawSpriteRect(static_cast<int>(weapon3.position.x + camera.x-32), static_cast<int>(weapon3.position.y-32), weapon3.textureFrame * 64, 0, 64, 64,
+			W3Texture,
+			0.125f, 1.0f, 0.0f, WHITE);
+
+		//Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
+		if(weapon2.facing>0)
+		{
+			weapon2.textureFrame = 0;
+			Novice::DrawSpriteRect(static_cast<int>(weapon2.position.x + camera.x - 50), static_cast<int>(weapon2.position.y - 5), weapon2.textureFrame * 50, 0, 50, 10,
+				W2Texture,
+				0.5f, 1.0f, 0.0f, WHITE);
+		}
+		else
+		{
+			weapon2.textureFrame = 1;
+			Novice::DrawSpriteRect(static_cast<int>(weapon2.position.x + camera.x - 10), static_cast<int>(weapon2.position.y - 5), weapon2.textureFrame * 50, 0, 50, 10,
+				W2Texture,
+				0.5f, 1.0f, 0.0f, WHITE);
+		}
+		
+		if (weapon1.facing > 0)
+		{
+			weapon1.textureFrame = 0;
+			
+		}
+		else
+		{
+			weapon1.textureFrame = 1;
+			
+		}
+		if (weapon1.textureTimer < weapon1.textureTime)
+		{
+			Novice::DrawSpriteRect(static_cast<int>(weapon1.position.x + camera.x - 32), static_cast<int>(weapon1.position.y - 32), weapon1.textureFrame * 64, 0, 64, 64,
+				W1Texture,
+				0.5f, 1.0f, 0.0f, WHITE);
+		}
+		
+		//Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
 
 			}
 		}
@@ -1417,7 +1471,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 110, "enemy dir: %d  target dir: %d", enemy.direction, enemy.dashDirection);
 			Novice::ScreenPrintf(0, 130, "isCharging: %d", enemy.isCharging);
 			Novice::ScreenPrintf(0, 150, "isDash: %d", enemy.isDash);
-			Novice::ScreenPrintf(0, 170, "w1 timer : %d  charge : %d", weapon1.flyTimer, weapon1.charge);
+			Novice::ScreenPrintf(0, 170, "w1 timer : %d  charge : %d  weapon1.textureTimer : %d ", weapon1.flyTimer, weapon1.charge, weapon1.textureTimer);
 			Novice::ScreenPrintf(0, 190, "w2 timer : %d  charge : %d", weapon2.flyTimer, weapon2.charge);
 			Novice::ScreenPrintf(0, 210, "w3 timer : %d", weapon3.flyTimer);
 			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x, player.position.y);

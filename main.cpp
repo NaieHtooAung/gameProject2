@@ -230,8 +230,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int opBgHandle1[3] = { Novice::LoadAudio("./Resource/audio/fireball.mp3"),
 							};
 	int playHandle1[3] = { -1 };
-	int opBgHandle2= 
-		Novice::LoadAudio("./Resource/audio/fireballHit.mp3");
+	int opBgHandle2= Novice::LoadAudio("./Resource/audio/fireballHit.mp3");
 	int playHandle2= -1;
 	int opBgHandle3[3] = { Novice::LoadAudio("./Resource/audio/spaceRock.mp3"),
 							Novice::LoadAudio("./Resource/audio/spaceRock.mp3"), 
@@ -243,6 +242,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int opBgHandle6 = Novice::LoadAudio("./Resource/audio/dash.mp3");
 	int playHandle6 = -1;
 	int opBgHandle7 = Novice::LoadAudio("./Resource/audio/enemyDash.mp3");
+	int opBgHandle8 = Novice::LoadAudio("./Resource/audio/start.mp3");
+	int playHandle8 = -1;
+	int opBgHandle9 = Novice::LoadAudio("./Resource/audio/gameScene.mp3");
+	int playHandle9 = -1;
+	int opBgHandle10 = Novice::LoadAudio("./Resource/audio/lose.mp3");
+	int playHandle10 = -1;
+	int opBgHandle11 = Novice::LoadAudio("./Resource/audio/wolfHowling.mp3");
+	int opBgHandle12 = Novice::LoadAudio("./Resource/audio/win.mp3");
+	int playHandle12 = -1;
+	int opBgHandle13 = Novice::LoadAudio("./Resource/audio/jump.mp3");
+	
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -389,9 +399,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 				}
 				/// ジャンプ処理
-				if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
+				if (keys[DIK_SPACE] && !preKeys[DIK_SPACE] && !player.isJump)
 				{
 					player.isJump = true;
+					Novice::PlayAudio(opBgHandle13, 0, 0.2f);
+					
 				}
 				if (player.isJump)
 				{
@@ -400,6 +412,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 				if (player.position.y >= 640)
 				{
+					
 					player.velocity.y = 20;
 					player.position.y = 640;
 					player.isJump = false;
@@ -1120,6 +1133,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if (keys[DIK_SPACE] && !preKeys[DIK_SPACE])
 				{
 					inPhaseControll = 3;
+					if (Novice::IsPlayingAudio(playHandle10))
+					{
+						Novice::StopAudio(playHandle10);
+					}
+					if (Novice::IsPlayingAudio(playHandle12))
+					{
+						Novice::StopAudio(playHandle12);
+					}
 				}
 			}
 			else if (inPhaseControll == 3)
@@ -1144,6 +1165,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		if (gamePhase == 0)
 		{
+			
+			if (!Novice::IsPlayingAudio(playHandle8))
+			{
+				playHandle8 = Novice::PlayAudio(opBgHandle8, 1, 0.5f);
+			}
 			if (inPhaseControll == 0)
 			{
 				
@@ -1160,10 +1186,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				
 			}
+			
 			Novice::DrawSprite(0, 0, titleBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 		}
 		else if (gamePhase == 1)
 		{
+			if (!Novice::IsPlayingAudio(playHandle8))
+			{
+				playHandle8 = Novice::PlayAudio(opBgHandle8, 1, 0.5f);
+			}
 			if (inPhaseControll == 0)
 			{
 
@@ -1194,6 +1225,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else if (inPhaseControll == 2)
 			{
+				if (Novice::IsPlayingAudio(playHandle8))
+				{
+					Novice::StopAudio(playHandle8);
+				}
+				if (!Novice::IsPlayingAudio(playHandle9))
+				{
+					playHandle9 = Novice::PlayAudio(opBgHandle9, 1, 0.2f);
+				}
 				Novice::DrawBox(static_cast<int>(camera.x), 0, 1280, 720, 0.0f, 0x87CEEBFF, kFillModeSolid); // sky
 				Novice::DrawSprite(0, 0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
 				//UI
@@ -1303,6 +1342,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		else if (gamePhase == 3)
 		{
+			Novice::StopAudio(playHandle9);
+			if (player.health <= 0)
+			{
+				Novice::PlayAudio(opBgHandle11, 0, 0.5f);
+				if (!Novice::IsPlayingAudio(playHandle10))
+				{
+					playHandle10 = Novice::PlayAudio(opBgHandle10, 0, 0.5f);
+				}
+			}
+			if (enemy.health <= 0)
+			{
+				if (!Novice::IsPlayingAudio(playHandle12))
+				{
+					playHandle12 = Novice::PlayAudio(opBgHandle12, 0, 0.5f);
+				}
+			}
 			Novice::DrawSprite(0, 0, resultBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 			if (inPhaseControll == 0)
 			{

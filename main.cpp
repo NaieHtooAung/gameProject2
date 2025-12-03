@@ -82,7 +82,7 @@ typedef struct SkyBall {
 
 struct Weapon
 {
-	Vector2 position;
+	Vector2 position = { -100,-100 };
 	Vector2 velosity;
 	int state = 0; // 0:待機 1:飛翔 2:帰還
 	int facing = 1;
@@ -149,7 +149,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Enemy enemy;
 	enemy.position.x = 840.0f;
-	enemy.position.y = 640.0f;
+	enemy.position.y = -200.0f;
 	enemy.radius = 64.0f;
 	enemy.health = 400;
 	enemy.speed = 3.0f;
@@ -195,8 +195,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	weapon1.flyTime = 15;
 	weapon1.flyTimer = 15;
-	weapon2.flyTime = 60;
-	weapon2.flyTimer = 60;
+	weapon2.flyTime = 45;
+	weapon2.flyTimer = 45;
 	weapon3.flyTime = 90;
 	weapon3.flyTimer = 90;
 
@@ -213,6 +213,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int resultBGTexture = Novice::LoadTexture("./Resource/image/result.png");
 	int enemyAttackP2 = Novice::LoadTexture("./Resource/image/enemyAttackBall.png");
 	int enemyAttackP3 = Novice::LoadTexture("./Resource/image/spaceRock.png");
+	int resultTimerTexture = Novice::LoadTexture("./Resource/image/resultTimer.png");
+	int loseTexture = Novice::LoadTexture("./Resource/image/lose.png");
 
 
 	//數字圖像讀取
@@ -259,8 +261,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int opBgHandle14 = Novice::LoadAudio("./Resource/audio/sword.mp3");
 	int opBgHandle15 = Novice::LoadAudio("./Resource/audio/arrow.mp3");
 	int opBgHandle16 = Novice::LoadAudio("./Resource/audio/boomerang.mp3");
-	
 
+	int hitSE = Novice::LoadAudio("./Resource/audio/bump.mp3");
+	//aaaint playhitSE = -1;
+	
+	int phase2introActTimer = 360;
+	int enemyIsHitPresent = 0;
+	int enemyIsHitTimer = 0;
+	int playerIsHitPresent = 0;
+	int playerIsHitTimer = 0;
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
@@ -337,13 +346,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (inPhaseControll == 0)
 			{
 				//intro
+				enemy.health = 0;
 				inPhaseControll = 1;
 			}
 			else if (inPhaseControll == 1)
 			{
-				//setup
-				inPhaseControll = 2;
-				start = clock();
+				if (enemy.position.y < 640)
+				{
+					enemy.position.y += 20.0f;
+					enemySprite.frame = 1;
+				}
+				else if (enemy.position.y >= 640)
+				{
+					enemy.position.y = 640.0f;
+					enemySprite.frame = 0;
+					phase2introActTimer--;
+				}
+
+				if (phase2introActTimer == 300)
+				{
+					Novice::PlayAudio(opBgHandle11, 0, 0.5f);
+				}
+				if (phase2introActTimer<=300)
+				{
+					enemySprite.frame = 3;
+					enemy.health += 2;
+				}
+
+				if(enemy.health>=400)
+				{
+					enemy.health = 400;
+					inPhaseControll = 2;
+					start = clock();
+				}
 			}
 			else if (inPhaseControll == 2)
 			{
@@ -479,7 +514,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					if (weapon1.isHit)//敵を命中したら
 					{
 						weapon1.hitReady = false;
-						enemy.health -= 2 + weapon1.charge / 20;
+						enemy.health -= 2 + weapon1.charge / 10;
 					}
 
 					if (weapon1.flyTimer <= 0)
@@ -521,7 +556,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					{
 						weapon2.position.x = player.position.x;
 						weapon2.position.y = player.position.y;
-						weapon2.velosity.x = (float)weapon2.charge * player.facing / 2;
+						weapon2.velosity.x = 10 * player.facing +(float)weapon2.charge * player.facing / 3;
 						weapon2.velosity.y = -5;
 						weapon2.state = 1;
 						weapon2.facing = player.facing;
@@ -533,8 +568,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					}
 
 				}
-				
-				
 
 				if (weapon2.state == 0)
 				{
@@ -547,7 +580,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						weapon2.charge = 0;
 					}
 				}
-				if (weapon2.state == 1)
+				else if (weapon2.state == 1)
 				{
 					weapon2.flyTimer -= 1;
 					weapon2.velosity.y += 0.5f; // 重力
@@ -555,13 +588,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					{
 						weapon2.state = 0;
 						weapon2.flyTimer = weapon2.flyTime;
+						weapon2.charge = 0;
 					}
 					if (weapon2.isHit)//敵を命中したら
 					{
 						weapon2.hitReady = false;
 						weapon2.velosity.x = 0;
 						weapon2.velosity.y = 0;
-						enemy.health -= 2 + weapon2.charge / 20;
+						enemy.health -= 2 + weapon2.charge / 10;
 					}
 				}
 
@@ -766,19 +800,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				
 			}
 			else if (enemy.isDash) {
-				enemy.dashCoolTimer--;
-				
-				
-				// Compute direction vector toward the locked target
-				//float dx = enemy.dashTargetPosition.x - enemy.position.x;
-				//float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
-				//float len = sqrtf(dx * dx + dy * dy);
-				//if (len != 0.0f) {
-				//	dx /= len;
-				//	dy /= len;
-				//}
+						enemy.dashCoolTimer--;
 
-								// If you only want horizontal (X axis) dash and maintain ground Y:
+
+						// Compute direction vector toward the locked target
+						//float dx = enemy.dashTargetPosition.x - enemy.position.x;
+						//float dy = enemy.dashTargetPosition.y - enemy.position.y;  // optional if Y moves
+						//float len = sqrtf(dx * dx + dy * dy);
+						//if (len != 0.0f) {
+						//	dx /= len;
+						//	dy /= len;
+						//}
+
+										// If you only want horizontal (X axis) dash and maintain ground Y:
 						enemy.position.x += enemy.dashDirection * enemy.dashSpeed;
 						enemy.position.y = 640.0f;  // keeps Y fixed
 
@@ -816,13 +850,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					player.isDamage = true;
 					if (player.isDamage)
 					{
-						player.health -= 2;
+						player.health -= 10;
 					}
 				}
-				else
-				{
-					player.isDamage = false;
-				}
+				
 			}
 		
 			
@@ -921,6 +952,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 					if (distSq <= radiusSum * radiusSum) {
 						// Hit detected — apply damage
+						player.isDamage = true;
 						bullet[i].isHit = true;
 						playHandle2 = Novice::PlayAudio(opBgHandle2, 0, 0.2f);
 						player.health -= 5;
@@ -964,36 +996,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					}
 					enemySprite.frame = 3;
 				}
-		for (int j = 0; j < 3; j++)
-		{
-			// Collision with player
-			float dx = player.position.x - sb[j].position.x;
-			float dy = player.position.y - sb[j].position.y;
-			float distance = sqrtf(dx * dx + dy * dy);
-			float combinedRadius = player.radius + sb[j].radius;
-			if (distance < combinedRadius + 10) {
-				// Hit detected
-				player.isDamage = true;
-				if (player.isDamage)
+				for (int j = 0; j < 3; j++)
 				{
-					player.health -= 10;
-					playHandle4 = Novice::PlayAudio(opBgHandle4, 0, 0.2f);
-					// Immediately hide/disable this skyball
-					sb[j].isFalling = false;
-					sb[j].position.y = -100.0f;
-					sb[j].position.x = (float)(rand() % 1230 + 50);
-					player.isDamage = false;
+					// Collision with player
+					float dx = player.position.x - sb[j].position.x;
+					float dy = player.position.y - sb[j].position.y;
+					float distance = sqrtf(dx * dx + dy * dy);
+					float combinedRadius = player.radius + sb[j].radius;
+					if (distance < combinedRadius + 10) {
+						// Hit detected
+						player.isDamage = true;
+						if (player.isDamage)
+						{
+							player.health -= 5;
+							playHandle4 = Novice::PlayAudio(opBgHandle4, 0, 0.2f);
+							// Immediately hide/disable this skyball
+							sb[j].isFalling = false;
+							sb[j].position.y = -100.0f;
+							sb[j].position.x = (float)(rand() % 1230 + 50);
+						}
+					}
+
 				}
-			}
-			
-		}
-	
-		for (int i = 0; i < 3; i++)
-		{
-			if (sb[i].isFalling && enemy.attackPattern != 3)
-			{
-				sb[i].position.y += sb[i].speed;
-			}
+
+				for (int i = 0; i < 3; i++)
+				{
+					if (sb[i].isFalling && enemy.attackPattern != 3)
+					{
+						sb[i].position.y += sb[i].speed;
+					}
 
 				}
 
@@ -1099,7 +1130,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 				//camera
-				if (player.position.x < 500)
+				/*if (player.position.x < 500)
 				{
 					camera.x = 500 - player.position.x;
 				}
@@ -1110,7 +1141,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				else if (player.position.x >780)
 				{
 					camera.x = 780 - player.position.x;;
-				}
+				}*/
+		
+		camera.x = 640 - (player.position.x+enemy.position.x)/2;
+
 
 				if(player.health<=0 || enemy.health<=0)
 				{
@@ -1135,6 +1169,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else if (inPhaseControll == 3)
 			{
+				Novice::StopAudio(playHandle9);
+				if (player.health <= 0)
+				{
+					Novice::PlayAudio(opBgHandle11, 0, 0.5f);
+					if (!Novice::IsPlayingAudio(playHandle10))
+					{
+						playHandle10 = Novice::PlayAudio(opBgHandle10, 0, 0.5f);
+					}
+				}
+				if (enemy.health <= 0)
+				{
+					if (!Novice::IsPlayingAudio(playHandle12))
+					{
+						playHandle12 = Novice::PlayAudio(opBgHandle12, 0, 0.5f);
+					}
+				}
 				//outro
 				gamePhase = 3;
 				inPhaseControll = 0;
@@ -1150,8 +1200,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (inPhaseControll == 1)
 			{
 				//setup
-				player.health = 100;
-				enemy.health = 400;
 				player.position.x = 320.0f;
 				player.position.y = 640.0f;
 				enemy.position.x = 840.0f;
@@ -1176,6 +1224,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else if (inPhaseControll == 3)
 			{
+				player.health = 100;
+				enemy.health = 0;
 				//outro
 				gamePhase = 1;
 				inPhaseControll = 0;
@@ -1246,6 +1296,108 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		else if (gamePhase == 2)
 		{
+			Novice::DrawBox(static_cast<int>(camera.x), 0, 1280, 720, 0.0f, 0x87CEEBFF, kFillModeSolid); // sky
+			Novice::DrawSprite(0, 0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
+			//UI
+			//playerHP Bar
+			//int playerHp = 80;  //max=100
+			Novice::DrawBox(83, 99, player.health * 330 / 100, 26, 0.0f, RED, kFillModeSolid);
+
+			//EnemyHP Bar
+			//enemy.health = 80;   //max=100
+			Novice::DrawBox(211, 19, enemy.health * 858 / 400, 26, 0.0f, RED, kFillModeSolid);
+
+			//weapon1 CD Bar
+			if (weapon1.flyTimer >= weapon1.flyTime)
+			{
+				Novice::DrawBox(106, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
+			}
+			else
+			{
+				Novice::DrawBox(106, 201, 27, (weapon1.flyTime - weapon1.flyTimer) * 84 / weapon1.flyTime, 0.0f, RED, kFillModeSolid);
+			}
+			Novice::DrawBox(126, 201, 7, weapon1.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
+
+			//weapon2 CD Bar
+			if (weapon2.flyTimer >= weapon2.flyTime)
+			{
+				Novice::DrawBox(186, 201, 28, 84, 0.0f, GREEN, kFillModeSolid);
+			}
+			else
+			{
+				Novice::DrawBox(186, 201, 28, (weapon2.flyTime - weapon2.flyTimer) * 84 / weapon2.flyTime, 0.0f, RED, kFillModeSolid);
+			}
+			Novice::DrawBox(206, 201, 8, weapon2.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
+
+			//weapon3 CD Bar
+			if (weapon3.flyTimer >= weapon3.flyTime)
+			{
+				Novice::DrawBox(266, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
+			}
+			else
+			{
+				Novice::DrawBox(266, 201, 27, (weapon3.flyTime - weapon3.flyTimer) * 84 / weapon3.flyTime, 0.0f, RED, kFillModeSolid);
+			}
+
+
+			//player・enemy・bullet・weapon描画
+			
+
+			if (player.facing == 1)
+			{
+				playerFSprite.frame = (player.weapon + 1) * 2;
+			}
+			else
+			{
+				playerFSprite.frame = (player.weapon + 1) * 2 + 1;
+			}
+
+			if (player.isDamage)
+			{
+				if (playerIsHitPresent == 0)
+				{
+					playerIsHitPresent = 1;
+				}
+				Novice::PlayAudio(hitSE, 0, 2.0f);
+				player.isDamage = false;
+			}
+
+
+			if (playerIsHitPresent == 0)
+			{
+				Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+					playerFTexture,
+					0.125f, 1.0f, 0.0f, WHITE);
+			}
+			else if (playerIsHitPresent == 1)
+			{
+				playerIsHitTimer++;
+				if (playerIsHitTimer > 0 && playerIsHitTimer <= 5)
+				{
+					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+						playerFTexture,
+						0.125f, 1.0f, 0.0f, WHITE);
+				}
+				else if (playerIsHitTimer > 10 && playerIsHitTimer <= 15)
+				{
+					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+						playerFTexture,
+						0.125f, 1.0f, 0.0f, WHITE);
+				}
+				else if (playerIsHitTimer > 20 && playerIsHitTimer <= 25)
+				{
+					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+						playerFTexture,
+						0.125f, 1.0f, 0.0f, WHITE);
+				}
+
+				if (playerIsHitTimer >= 30)
+				{
+					playerIsHitPresent = 0;
+					playerIsHitTimer = 0;
+				}
+			}
+
 			if (inPhaseControll == 0)
 			{
 
@@ -1264,182 +1416,150 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				{
 					playHandle9 = Novice::PlayAudio(opBgHandle9, 1, 0.2f);
 				}
-				Novice::DrawBox(static_cast<int>(camera.x), 0, 1280, 720, 0.0f, 0x87CEEBFF, kFillModeSolid); // sky
-				Novice::DrawSprite(0, 0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
-				//UI
-				//playerHP Bar
-				//int playerHp = 80;  //max=100
-				Novice::DrawBox(83, 99, player.health * 330 / 100, 26, 0.0f, RED, kFillModeSolid);
+				
+				for (int i = 0; i < 3; i++)
+				{
+					if (sb[i].isFalling)
+					{
+						Novice::DrawSprite((static_cast<int>(sb[i].position.x + camera.x) - 40), (static_cast<int>(sb[i].position.y) - 30),
+							enemyAttackP3,
+							2.0f, 2.0f, 0.0f, WHITE);
+					}
+				}
+				if (player.isDamage)
+				{
+					Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, RED, kFillModeSolid);
+				}
+				for (int i = 0; i < 3; i++)
+				{
+					if (bullet[i].isShot)
+					{
 
-		//EnemyHP Bar
-		//enemy.health = 80;   //max=100
-		Novice::DrawBox(211, 19, enemy.health * 858 / 400, 26, 0.0f, RED, kFillModeSolid);
+						Novice::DrawSprite(static_cast<int>(bullet[i].position.x + camera.x) - 16, static_cast<int>(bullet[i].position.y) - 16,
+							enemyAttackP2,
+							1.0f, 1.0f, 0.0f, WHITE);
+					}
+				}
+				//Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
+				
+				
+				//Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
 
-				//weapon1 CD Bar
-				if (weapon1.flyTimer >= weapon1.flyTime)
+				if (weapon3.textureFrame > 7)
 				{
-					Novice::DrawBox(106, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
+					weapon3.textureFrame = 0;
 				}
-				else
-				{
-					Novice::DrawBox(106, 201, 27, (weapon1.flyTime - weapon1.flyTimer) * 84 / weapon1.flyTime, 0.0f, RED, kFillModeSolid);
-				}
-				Novice::DrawBox(126, 201, 7, weapon1.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
-
-				//weapon2 CD Bar
-				if (weapon2.flyTimer >= weapon2.flyTime)
-				{
-					Novice::DrawBox(186, 201, 28, 84, 0.0f, GREEN, kFillModeSolid);
-				}
-				else
-				{
-					Novice::DrawBox(186, 201, 28, (weapon2.flyTime - weapon2.flyTimer) * 84 / weapon2.flyTime, 0.0f, RED, kFillModeSolid);
-				}
-				Novice::DrawBox(206, 201, 8, weapon2.charge * 84 / 101, 0.0f, BLUE, kFillModeSolid);
-
-				//weapon3 CD Bar
-				if (weapon3.flyTimer >= weapon3.flyTime)
-				{
-					Novice::DrawBox(266, 201, 27, 84, 0.0f, GREEN, kFillModeSolid);
-				}
-				else
-				{
-					Novice::DrawBox(266, 201, 27, (weapon3.flyTime - weapon3.flyTimer) * 84 / weapon3.flyTime, 0.0f, RED, kFillModeSolid);
-				}
-
-
-				//player・enemy・bullet・weapon描画
-				if (player.isHit)
-				{
-					Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
-				}
-				else
-				{
-					Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
-				}
-
-				if (player.facing == 1)
-				{
-					playerFSprite.frame = (player.weapon + 1) * 2;
-				}
-				else
-				{
-					playerFSprite.frame = (player.weapon + 1) * 2 + 1;
-				}
-				Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
-					playerFTexture,
+				Novice::DrawSpriteRect(static_cast<int>(weapon3.position.x + camera.x - 32), static_cast<int>(weapon3.position.y - 32), weapon3.textureFrame * 64, 0, 64, 64,
+					W3Texture,
 					0.125f, 1.0f, 0.0f, WHITE);
 
-		for (int i = 0; i < 3; i++)
-		{
-			if (sb[i].isFalling)
-			{
-				Novice::DrawSprite((static_cast<int>(sb[i].position.x + camera.x)- 40), (static_cast<int>(sb[i].position.y)-30),
-					enemyAttackP3,
-					2.0f, 2.0f, 0.0f, WHITE);
-			}
-		}
-		if (player.isDamage)
-		{
-			Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, RED, kFillModeSolid);
-		}
-		for (int i = 0; i < 3; i++)
-		{
-			if (bullet[i].isShot)
-			{
+				//Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
+				if (weapon2.facing > 0)
+				{
+					weapon2.textureFrame = 0;
+					Novice::DrawSpriteRect(static_cast<int>(weapon2.position.x + camera.x - 50), static_cast<int>(weapon2.position.y - 5), weapon2.textureFrame * 50, 0, 50, 10,
+						W2Texture,
+						0.5f, 1.0f, 0.0f, WHITE);
+				}
+				else
+				{
+					weapon2.textureFrame = 1;
+					Novice::DrawSpriteRect(static_cast<int>(weapon2.position.x + camera.x - 10), static_cast<int>(weapon2.position.y - 5), weapon2.textureFrame * 50, 0, 50, 10,
+						W2Texture,
+						0.5f, 1.0f, 0.0f, WHITE);
+				}
 
-				Novice::DrawSprite(static_cast<int>(bullet[i].position.x + camera.x) - 16, static_cast<int>(bullet[i].position.y) - 16,
-					enemyAttackP2,
-					1.0f, 1.0f, 0.0f, WHITE);
-			}
-		}
-		//Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0xFF0000FF, kFillModeSolid);
-		if ((weapon1.isHit&& weapon1.hitReady) || (weapon2.isHit && weapon2.hitReady) || (weapon3.isHit && weapon3.hitReady))
-		{
-			Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, BLACK, kFillModeSolid);
-		}
-		else
-		{
-			Novice::DrawEllipse(static_cast<int>(enemy.position.x + camera.x), static_cast<int>(enemy.position.y), (int)enemy.radius, (int)enemy.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
-		}
-		if(enemy.direction>0)
-		{
-			enemySprite.frame *= 2;
-			enemySprite.frame += 1;
-		}
-		else
-		{
-			enemySprite.frame *= 2;
-		}
-		Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
-			enemyTexture,
-			0.125f, 1.0f, 0.0f, WHITE);
-		//Novice::DrawEllipse(static_cast<int>(weapon3.position.x + camera.x), static_cast<int>(weapon3.position.y), 32, 32, 0.0f, WHITE, kFillModeSolid);
-		
-		if(weapon3.textureFrame >7)
-		{
-			weapon3.textureFrame = 0;
-		}
-		Novice::DrawSpriteRect(static_cast<int>(weapon3.position.x + camera.x-32), static_cast<int>(weapon3.position.y-32), weapon3.textureFrame * 64, 0, 64, 64,
-			W3Texture,
-			0.125f, 1.0f, 0.0f, WHITE);
+				if (weapon1.facing > 0)
+				{
+					weapon1.textureFrame = 0;
 
-		//Novice::DrawEllipse(static_cast<int>(weapon2.position.x + camera.x), static_cast<int>(weapon2.position.y), 10, 10, 0.0f, WHITE, kFillModeSolid);
-		if(weapon2.facing>0)
-		{
-			weapon2.textureFrame = 0;
-			Novice::DrawSpriteRect(static_cast<int>(weapon2.position.x + camera.x - 50), static_cast<int>(weapon2.position.y - 5), weapon2.textureFrame * 50, 0, 50, 10,
-				W2Texture,
-				0.5f, 1.0f, 0.0f, WHITE);
-		}
-		else
-		{
-			weapon2.textureFrame = 1;
-			Novice::DrawSpriteRect(static_cast<int>(weapon2.position.x + camera.x - 10), static_cast<int>(weapon2.position.y - 5), weapon2.textureFrame * 50, 0, 50, 10,
-				W2Texture,
-				0.5f, 1.0f, 0.0f, WHITE);
-		}
+				}
+				else
+				{
+					weapon1.textureFrame = 1;
+
+				}
+				if (weapon1.textureTimer < weapon1.textureTime)
+				{
+					Novice::DrawSpriteRect(static_cast<int>(weapon1.position.x + camera.x - 32), static_cast<int>(weapon1.position.y - 32), weapon1.textureFrame * 64, 0, 64, 64,
+						W1Texture,
+						0.5f, 1.0f, 0.0f, WHITE);
+				}
+
+				Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
+
 		
-		if (weapon1.facing > 0)
-		{
-			weapon1.textureFrame = 0;
+			}
+
 			
-		}
-		else
-		{
-			weapon1.textureFrame = 1;
-			
-		}
-		if (weapon1.textureTimer < weapon1.textureTime)
-		{
-			Novice::DrawSpriteRect(static_cast<int>(weapon1.position.x + camera.x - 32), static_cast<int>(weapon1.position.y - 32), weapon1.textureFrame * 64, 0, 64, 64,
-				W1Texture,
-				0.5f, 1.0f, 0.0f, WHITE);
-		}
-		
-		//Novice::DrawEllipse(static_cast<int>(weapon1.position.x + camera.x), static_cast<int>(weapon1.position.y), 32, 32, 0.0f, WHITE, kFillModeWireFrame);
-
+			if (enemy.direction > 0)
+			{
+				enemySprite.frame *= 2;
+				enemySprite.frame += 1;
 			}
+			else
+			{
+				enemySprite.frame *= 2;
+			}
+			
+			if ((weapon1.isHit) || (weapon2.isHit && weapon2.hitReady && weapon2.state == 1) || (weapon3.isHit && weapon3.hitReady && weapon3.state >= 1))
+			{
+				if (enemyIsHitPresent==0)
+				{
+					enemyIsHitPresent = 1;
+				}
+				Novice::PlayAudio(hitSE, 0, 2.0f);
+			}
+			
+			
+			if (enemyIsHitPresent == 0)
+			{
+				Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
+					enemyTexture,
+					0.125f, 1.0f, 0.0f, WHITE);
+			}
+			else if (enemyIsHitPresent == 1)
+			{
+				enemyIsHitTimer++;
+				if (enemyIsHitTimer > 0&& enemyIsHitTimer <= 5)
+				{
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
+						enemyTexture,
+						0.125f, 1.0f, 0.0f, WHITE);
+
+				}
+				else if (enemyIsHitTimer > 10 && enemyIsHitTimer <= 15)
+				{
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
+						enemyTexture,
+						0.125f, 1.0f, 0.0f, WHITE);
+
+				}
+				else if (enemyIsHitTimer > 20 && enemyIsHitTimer <= 25)
+				{
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
+						enemyTexture,
+						0.125f, 1.0f, 0.0f, WHITE);
+
+				}
+				
+				if (enemyIsHitTimer >= 30)
+				{
+					enemyIsHitPresent = 0;
+					enemyIsHitTimer = 0;
+				}
+			}
+
+
+			
+			
 		}
 		else if (gamePhase == 3)
 		{
-			Novice::StopAudio(playHandle9);
-			if (player.health <= 0)
-			{
-				Novice::PlayAudio(opBgHandle11, 0, 0.5f);
-				if (!Novice::IsPlayingAudio(playHandle10))
-				{
-					playHandle10 = Novice::PlayAudio(opBgHandle10, 0, 0.5f);
-				}
-			}
-			if (enemy.health <= 0)
-			{
-				if (!Novice::IsPlayingAudio(playHandle12))
-				{
-					playHandle12 = Novice::PlayAudio(opBgHandle12, 0, 0.5f);
-				}
-			}
+			
+
 			Novice::DrawSprite(0, 0, resultBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
+
 			if (inPhaseControll == 0)
 			{
 
@@ -1480,6 +1600,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				1036, 620, numberGraphHandles[bigTimerArray[4]],
 				1.0f, 1.0f, 0.0, WHITE
 			);
+			Novice::DrawSprite(
+				0, 0, resultTimerTexture,
+				1.0f, 1.0f, 0.0, WHITE
+			);
+			if (player.health <= 0)
+			{
+				
+				Novice::DrawSprite(
+					0, 0, loseTexture,
+					1.0f, 1.0f, 0.0, WHITE
+				);
+			}
 		}
 
 
@@ -1511,7 +1643,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				Novice::ScreenPrintf(0, 480 + i * 20, "HIT bullet %d! health=%d", i, player.health);
 
 			}
-			
+			if (player.isHit)
+			{
+				Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, BLACK, kFillModeSolid);
+			}
+			else
+			{
+				Novice::DrawEllipse(static_cast<int>(player.position.x + camera.x), static_cast<int>(player.position.y), (int)player.radius, (int)player.radius, 0.0f, 0x0000FFFF, kFillModeWireFrame);
+			}
 			Novice::ScreenPrintf(0, 600, "BigTimer%d", bigTimerPrint);
 
 		}

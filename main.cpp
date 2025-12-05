@@ -213,7 +213,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int playerFTexture = Novice::LoadTexture("./Resource/image/playerF.png");
 	int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
-	int titleBGTexture = Novice::LoadTexture("./Resource/image/title.png");
+	int titleBGTexture = Novice::LoadTexture("./Resource/image/title2.png");
 	int startbarTexture = Novice::LoadTexture("./Resource/image/startbar.png");
 	int tutorialBGTexture = Novice::LoadTexture("./Resource/image/tutorial.png");
 	int resultBGTexture = Novice::LoadTexture("./Resource/image/win.png");

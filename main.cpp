@@ -214,6 +214,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int enemyTexture = Novice::LoadTexture("./Resource/image/enemy.png");
 	int hpUITexture = Novice::LoadTexture("./Resource/image/HpUI.png");
 	int titleBGTexture = Novice::LoadTexture("./Resource/image/title.png");
+	int startbarTexture = Novice::LoadTexture("./Resource/image/startbar.png");
 	int tutorialBGTexture = Novice::LoadTexture("./Resource/image/tutorial.png");
 	int resultBGTexture = Novice::LoadTexture("./Resource/image/win.png");
 	int enemyAttackP2 = Novice::LoadTexture("./Resource/image/enemyAttackBall.png");
@@ -276,6 +277,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int enemyIsHitTimer = 0;
 	int playerIsHitPresent = 0;
 	int playerIsHitTimer = 0;
+	int startBar = true;
+	int startBarTimer = 90;
+
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
@@ -1351,7 +1355,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		if (gamePhase == 0)
 		{
-			
+			Novice::DrawSprite(0, 0, titleBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
 			if (!Novice::IsPlayingAudio(playHandle8))
 			{
 				playHandle8 = Novice::PlayAudio(opBgHandle8, 1, 0.5f);
@@ -1366,14 +1370,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else if (inPhaseControll == 2)
 			{
-				
+				startBarTimer -= 1;
+				if (startBar)
+				{
+					//Novice::ScreenPrintf(500, 550, "press Space to start the game");
+					Novice::DrawSprite(
+						0, 0,	// 描画する画像の左上座標
+						startbarTexture,	// テクスチャハンドル
+						1.0f, 1.0f,	// 倍率
+						0.0f,		// 回転
+						0xFFFFFFFF	// 色
+					);
+				}
+				if (startBarTimer == 45)
+				{
+					startBar = false;
+				}
+				if (startBarTimer == 0)
+				{
+					startBar = true;
+					startBarTimer = 90;
+				}
 			}
 			else if (inPhaseControll == 3)
 			{
 				
 			}
 			
-			Novice::DrawSprite(0, 0, titleBGTexture, 1.0f, 1.0f, 0.0f, WHITE);
+			
 		}
 		else if (gamePhase == 1)
 		{

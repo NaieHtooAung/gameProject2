@@ -221,7 +221,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int enemyAttackP3 = Novice::LoadTexture("./Resource/image/spaceRock.png");
 	int resultTimerTexture = Novice::LoadTexture("./Resource/image/resultTimer.png");
 	int loseTexture = Novice::LoadTexture("./Resource/image/lose.png");
-	int forestTexture = Novice::LoadTexture("./Resource/image/forest.png");
+	int forestTexture = Novice::LoadTexture("./Resource/image/forestAlt.png");
 
 
 	//數字圖像讀取

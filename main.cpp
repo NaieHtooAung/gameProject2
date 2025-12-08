@@ -3,7 +3,7 @@
 #include<cstdlib>
 #include<time.h>
 
-const char kWindowTitle[] = "GC1C_08_ネイ_トゥーアウン";
+const char kWindowTitle[] = "5241_冒険者物語の決滅";
 
 typedef struct Vector2 {
 	float x;

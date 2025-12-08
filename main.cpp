@@ -284,6 +284,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int startBarTimer = 90;
 	int actPhase = 0;
 	int actTimer = 30;
+	int isAttackPattern1 = false;
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -1788,13 +1789,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else if (playerIsHitPresent == 1)
 			{
+				
+				if (enemy.attackPattern == 1)
+				{
+					isAttackPattern1 = true;
+				}
 				playerIsHitTimer++;
 				Vector2 direction = {
 				float(rand() % 201 - 100) ,
 				float(rand() % 201 - 100) ,
 				};
 				float shakePower = 15;
-				if (enemy.attackPattern == 1)
+				if (isAttackPattern1)
 				{
 					shakeBG.x = direction.x * shakePower * (30 - playerIsHitTimer) / 3600;
 					shakeBG.y = direction.y * shakePower * (30 - playerIsHitTimer) / 3600;
@@ -1825,6 +1831,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				{
 					playerIsHitPresent = 0;
 					playerIsHitTimer = 0;
+					isAttackPattern1 = false;
 				}
 			}
 

@@ -13,6 +13,7 @@ typedef struct Vector2 {
 Vector2 camera;
 Vector2 shake;
 Vector2 shake2;
+Vector2 shakeBG;
 int BG1;
 int BG2;
 int BG3;
@@ -757,7 +758,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemy.patternCD--;
 					enemy.patternChange = false;
 					enemy.patternTimer = 180;
-
+					shakeBG.x = 0;
+					shakeBG.y = 0;
 				}
 				if (enemy.patternTimer == 180)
 				{
@@ -794,6 +796,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						enemy.speed = 0.0f;           // stand still while charging
 						enemy.position.y = 640.0f;    // maintain ground Y
 						enemySprite.frame = 1;
+
+						Vector2 direction = {
+				float(rand() % 201 - 100) ,
+				float(rand() % 201 - 100) ,
+						};
+						float shakePower = 2;
+						shakeBG.x = direction.x * shakePower * enemy.chargeTimer / 1200;
+						shakeBG.y = direction.y * shakePower * enemy.chargeTimer / 1200;
+
 
 				if (enemy.chargeTimer <= 0) {
 					// Charge ends → start dash
@@ -856,6 +867,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					}
 			if (enemy.isDash)
 			{
+				
 				float ax = player.position.x - enemy.position.x;
 				float dy = player.position.y - enemy.position.y;
 				float distSq = ax * ax + dy * dy;
@@ -978,6 +990,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 
 				if (enemy.attackPattern == 3) {
+					Vector2 direction = {
+				float(rand() % 201 - 100) ,
+				float(rand() % 201 - 100) ,
+					};
+					float shakePower = 50;
+					//float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
+					shakeBG.x = direction.x * shakePower / 1200;
+					shakeBG.y = direction.y * shakePower / 1200;
 					for (int i = 0; i < 3; i++) {
 						// If this ball is not currently falling, start it
 						if (!sb[i].isFalling) {
@@ -1212,22 +1232,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				float(rand() % 201 - 100) ,
 				float(rand() % 201 - 100) ,
 						};
-						float shakePower = 20;
+						float shakePower = 50;
 						//float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
-						shake.x = direction.x * shakePower / 1200;
-						shake.y = direction.y * shakePower / 1200;
+						shake.x = direction.x * shakePower * actTimer / 36000;
+						shake.y = direction.y * shakePower * actTimer / 36000;
 						player.velocity.x = 15;  //方向判定彈射
-						player.velocity.y = 15;
+						player.velocity.y = 20;
 						player.weapon = 3;
 						actTimer -= 1;
 						if (actTimer <= 0)
 						{
+							shake.x = 0;
+							shake.y =0;
 							actPhase = 1;
 						}
 					}
 					else if (actPhase == 1)
 					{
-						player.position.x += player.velocity.x*enemy.direction / 3;
+						player.position.x += player.velocity.x*enemy.direction / 4;
 						player.position.y -= player.velocity.y/3;
 						player.velocity.y -= 0.5f;
 						if (player.position.y > 640)
@@ -1259,10 +1281,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				float(rand() % 201 - 100) ,
 				float(rand() % 201 - 100) ,
 						};
-						float shakePower = 20;
+						float shakePower = 50;
 						//float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
-						shake2.x = direction.x * shakePower / 1200;
-						shake2.y = direction.y * shakePower / 1200;
+						shake2.x = direction.x * shakePower * actTimer / 36000;
+						shake2.y = direction.y * shakePower * actTimer / 36000;
 						if (enemy.attackPattern == 0)
 						{
 							enemySprite.frame = 1;
@@ -1284,6 +1306,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						actTimer -= 1;
 						if (actTimer <= 0)
 						{
+							shake2.x = 0;
+							shake2.y = 0;
 							actPhase = 1;
 						}
 						
@@ -1581,10 +1605,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			BG2 = BG1 -1280;
 			BG4 = BG1 +1280;
 			BG3 = BG2 - 1280;
-			Novice::DrawSprite((int)(BG1 + camera.x), (int)(0 + camera.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
-			Novice::DrawSprite((int)(BG2 + camera.x), (int)(0 + camera.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
-			Novice::DrawSprite((int)(BG3 + camera.x), (int)(0 + camera.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
-			Novice::DrawSprite((int)(BG4 + camera.x), (int)(0 + camera.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite((int)(BG1 + camera.x + shakeBG.x), (int)(0 + camera.y + shakeBG.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite((int)(BG2 + camera.x + shakeBG.x), (int)(0 + camera.y + shakeBG.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite((int)(BG3 + camera.x + shakeBG.x), (int)(0 + camera.y + shakeBG.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite((int)(BG4 + camera.x+shakeBG.x), (int)(0 + camera.y + shakeBG.y), forestTexture, 1.0f, 1.0f, 0.0f, WHITE);
 			Novice::DrawSprite(0, 0, hpUITexture, 1.0f, 1.0f, 0.0f, WHITE);
 			//UI
 			//playerHP Bar
@@ -1722,6 +1746,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if (actPhase == 0)
 				{
 					Novice::DrawBox(0, 0, 1280, 720, 0, WHITE, kFillModeSolid);
+
+					for (int i = 0; i < 3; i++)
+					{
+						Novice::DrawSprite((static_cast<int>(sb[i].position.x + camera.x) - 40), (static_cast<int>(sb[i].position.y) - 30),
+							enemyAttackP3,
+							2.0f, 2.0f, 0.0f, WHITE);
+					}
 				}
 			}
 			
@@ -1758,6 +1789,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (playerIsHitPresent == 1)
 			{
 				playerIsHitTimer++;
+				Vector2 direction = {
+				float(rand() % 201 - 100) ,
+				float(rand() % 201 - 100) ,
+				};
+				float shakePower = 15;
+				if (enemy.attackPattern == 1)
+				{
+					shakeBG.x = direction.x * shakePower * (30 - playerIsHitTimer) / 3600;
+					shakeBG.y = direction.y * shakePower * (30 - playerIsHitTimer) / 3600;
+				}
+				shake.x = direction.x * shakePower * (30 - playerIsHitTimer) / 3600;
+				shake.y = direction.y * shakePower * (30 - playerIsHitTimer) / 3600;
+
 				if (playerIsHitTimer > 0 && playerIsHitTimer <= 5)
 				{
 					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x+shake.x), static_cast<int>(player.position.y+shake.x - 32), playerFSprite.frame * 96, 0, 96, 96,
@@ -1813,6 +1857,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (enemyIsHitPresent == 1)
 			{
 				enemyIsHitTimer++;
+				Vector2 direction = {
+				float(rand() % 201 - 100) ,
+				float(rand() % 201 - 100) ,
+				};
+				float shakePower = 15;
+				//float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
+				shake2.x = direction.x * shakePower *(30- enemyIsHitTimer)/ 3600;
+				shake2.y = direction.y * shakePower * (30 - enemyIsHitTimer) / 3600;
 				if (enemyIsHitTimer > 0&& enemyIsHitTimer <= 5)
 				{
 					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
@@ -1846,12 +1898,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				if (actPhase == 0)
 				{
-					for (int i = 0; i < 3; i++)
-					{
-						Novice::DrawSprite((static_cast<int>(sb[i].position.x + camera.x) - 40), (static_cast<int>(sb[i].position.y) - 30),
-							enemyAttackP3,
-							2.0f, 2.0f, 0.0f, WHITE);
-					}
 
 					for (int i = 0; i < 3; i++)
 					{
@@ -1976,6 +2022,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(1000, 0, "gamePhase:%d  inPhaseControll:%d  ", gamePhase, inPhaseControll);
 			Novice::ScreenPrintf(1100, 30, " actPhase:%d ", actPhase);
 			Novice::ScreenPrintf(1000,70, "BG1.x:%d   ", BG1);
+			Novice::ScreenPrintf(900,100, "shakeBG.x: %0.2f shakeBG.y: %0.2f   ", shakeBG.x, shakeBG.y);
 			Novice::ScreenPrintf(0, 0, "dashCooldown : %d", player.dashCoolTimer);
 			Novice::ScreenPrintf(0, 20, "dashTimer : %d", player.dashTimer);
 			Novice::ScreenPrintf(0, 50, "pattern : %d enemySprite.frame : %d ", enemy.attackPattern, enemySprite.frame);

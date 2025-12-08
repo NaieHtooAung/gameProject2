@@ -11,6 +11,8 @@ typedef struct Vector2 {
 } Vector2;
 
 Vector2 camera;
+Vector2 shake;
+Vector2 shake2;
 int BG1;
 int BG2;
 int BG3;
@@ -1206,6 +1208,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 					if (actPhase == 0)
 					{
+						Vector2 direction = {
+				float(rand() % 201 - 100) ,
+				float(rand() % 201 - 100) ,
+						};
+						float shakePower = 20;
+						//float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
+						shake.x = direction.x * shakePower / 1200;
+						shake.y = direction.y * shakePower / 1200;
 						player.velocity.x = 15;  //方向判定彈射
 						player.velocity.y = 15;
 						player.weapon = 3;
@@ -1245,7 +1255,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemySprite.frame = 4;
 					if (actPhase == 0)
 					{
-
+						Vector2 direction = {
+				float(rand() % 201 - 100) ,
+				float(rand() % 201 - 100) ,
+						};
+						float shakePower = 20;
+						//float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
+						shake2.x = direction.x * shakePower / 1200;
+						shake2.y = direction.y * shakePower / 1200;
 						if (enemy.attackPattern == 0)
 						{
 							enemySprite.frame = 1;
@@ -1734,7 +1751,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			if (playerIsHitPresent == 0)
 			{
-				Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+				Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x+shake.x), static_cast<int>(player.position.y+shake.x - 32), playerFSprite.frame * 96, 0, 96, 96,
 					playerFTexture,
 					0.1f, 1.0f, 0.0f, WHITE);
 			}
@@ -1743,19 +1760,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				playerIsHitTimer++;
 				if (playerIsHitTimer > 0 && playerIsHitTimer <= 5)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x+shake.x), static_cast<int>(player.position.y+shake.x - 32), playerFSprite.frame * 96, 0, 96, 96,
 						playerFTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 				}
 				else if (playerIsHitTimer > 10 && playerIsHitTimer <= 15)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x+shake.x), static_cast<int>(player.position.y+shake.x - 32), playerFSprite.frame * 96, 0, 96, 96,
 						playerFTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 				}
 				else if (playerIsHitTimer > 20 && playerIsHitTimer <= 25)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x), static_cast<int>(player.position.y - 32), playerFSprite.frame * 96, 0, 96, 96,
+					Novice::DrawSpriteRect(static_cast<int>(player.position.x - 48 + camera.x+shake.x), static_cast<int>(player.position.y+shake.x - 32), playerFSprite.frame * 96, 0, 96, 96,
 						playerFTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 				}
@@ -1789,7 +1806,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			
 			if (enemyIsHitPresent == 0)
 			{
-				Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
+				Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
 					enemyTexture,
 					0.1f, 1.0f, 0.0f, WHITE);
 			}
@@ -1798,21 +1815,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				enemyIsHitTimer++;
 				if (enemyIsHitTimer > 0&& enemyIsHitTimer <= 5)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
 						enemyTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 
 				}
 				else if (enemyIsHitTimer > 10 && enemyIsHitTimer <= 15)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
 						enemyTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 
 				}
 				else if (enemyIsHitTimer > 20 && enemyIsHitTimer <= 25)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x), static_cast<int>(enemy.position.y - 80), enemySprite.frame * 160, 0, 160, 160,
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
 						enemyTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 

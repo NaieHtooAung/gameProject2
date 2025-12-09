@@ -759,8 +759,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemy.patternCD--;
 					enemy.patternChange = false;
 					enemy.patternTimer = 180;
-					shakeBG.x = 0;
-					shakeBG.y = 0;
 				}
 				if (enemy.patternTimer == 180)
 				{
@@ -1210,6 +1208,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				
 				if (player.health <= 0)
 				{
+					player.health = 0;
 					if (enemy.attackPattern == 0)
 					{
 						enemySprite.frame = 1;
@@ -1275,6 +1274,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 				else 
 				{
+					enemy.health = 0;
 					enemySprite.frame = 4;
 					if (actPhase == 0)
 					{
@@ -1514,7 +1514,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			if (keys[DIK_P] && !preKeys[DIK_P])
 			{
-				player.health = 10;
+				
+				if (player.health > 95)
+				{
+					player.health = 10;
+				}
+				else if (player.health < 95)
+				{
+					player.health = 500;
+				}
 			}
 			if (keys[DIK_O] && !preKeys[DIK_O])
 			{
@@ -1802,8 +1810,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				float shakePower = 15;
 				if (isAttackPattern1)
 				{
-					shakeBG.x = direction.x * shakePower * (30 - playerIsHitTimer) / 3600;
-					shakeBG.y = direction.y * shakePower * (30 - playerIsHitTimer) / 3600;
+					shakeBG.x = direction.x * shakePower * (30 - playerIsHitTimer) / 2400;
+					shakeBG.y = direction.y * shakePower * (30 - playerIsHitTimer) / 2400;
 				}
 				shake.x = direction.x * shakePower * (30 - playerIsHitTimer) / 3600;
 				shake.y = direction.y * shakePower * (30 - playerIsHitTimer) / 3600;
@@ -1857,7 +1865,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			
 			if (enemyIsHitPresent == 0)
 			{
-				Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
+				Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.y - 80), enemySprite.frame * 160, 0, 160, 160,
 					enemyTexture,
 					0.1f, 1.0f, 0.0f, WHITE);
 			}
@@ -1874,21 +1882,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				shake2.y = direction.y * shakePower * (30 - enemyIsHitTimer) / 3600;
 				if (enemyIsHitTimer > 0&& enemyIsHitTimer <= 5)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.y - 80), enemySprite.frame * 160, 0, 160, 160,
 						enemyTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 
 				}
 				else if (enemyIsHitTimer > 10 && enemyIsHitTimer <= 15)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.y - 80), enemySprite.frame * 160, 0, 160, 160,
 						enemyTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 
 				}
 				else if (enemyIsHitTimer > 20 && enemyIsHitTimer <= 25)
 				{
-					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.x - 80), enemySprite.frame * 160, 0, 160, 160,
+					Novice::DrawSpriteRect(static_cast<int>(enemy.position.x - 80 + camera.x+shake2.x), static_cast<int>(enemy.position.y+shake2.y - 80), enemySprite.frame * 160, 0, 160, 160,
 						enemyTexture,
 						0.1f, 1.0f, 0.0f, WHITE);
 
@@ -2040,7 +2048,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::ScreenPrintf(0, 150, "isDash: %d", enemy.isDash);
 			Novice::ScreenPrintf(0, 170, "w1 timer : %d  charge : %d  weapon1.textureTimer : %d ", weapon1.flyTimer, weapon1.charge, weapon1.textureTimer);
 			Novice::ScreenPrintf(0, 190, "w2 timer : %d  charge : %d", weapon2.flyTimer, weapon2.charge);
-			Novice::ScreenPrintf(0, 210, "w3 timer : %d", weapon3.flyTimer);
+			Novice::ScreenPrintf(0, 210, "w3 timer : %d  playerIsHitTimer : %d", weapon3.flyTimer, playerIsHitTimer);
 			Novice::ScreenPrintf(0, 400, "player x : %0.2f  y : %0.2f", player.position.x, player.position.y);
 			Novice::ScreenPrintf(0, 430, "playerV x : %0.2f  y : %0.2f", player.velocity.x, player.velocity.y);
 			Novice::ScreenPrintf(0, 460, "SmashCharge: %.1f / 200.0", enemy.smashCharge);
